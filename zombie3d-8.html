@@ -1,0 +1,3078 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="screen-orientation" content="landscape">
+<title>Zombie Hunter 3D</title>
+<style>
+/* === HOTBAR === */
+.hotbar-slot {
+  width: 46px;
+  height: 46px;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid #444;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.hotbar-slot.aktif {
+  border-color: #fff;
+  background: rgba(255,255,255,0.15);
+  transform: translateY(-4px);
+}
+.hotbar-slot .item-icon {
+  font-size: 22px;
+}
+.hotbar-slot .item-jumlah {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 11px;
+  color: white;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #000;
+}
+.inventory-slot {
+  width: 60px;
+  height: 60px;
+  background: #3a3a3a;
+  border: 2px solid #555;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.inventory-slot .item-icon { font-size: 26px; }
+.inventory-slot .item-jumlah {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 12px;
+  color: white;
+  font-weight: bold;
+}
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1220; color: #fff;
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; }
+  body { touch-action: none; user-select: none; -webkit-user-select: none; }
+  #dunia { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #lookZone { position: fixed; inset: 0; z-index: 1; }
+  #darah { position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .35s;
+    background: radial-gradient(ellipse at center, rgba(220,38,38,0) 45%, rgba(220,38,38,.75) 100%); }
+  #crosshair { position: fixed; left: 50%; top: 50%; z-index: 3; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+    pointer-events: none; display: none; }
+  #crosshair::before, #crosshair::after { content: ""; position: absolute; background: rgba(255,255,255,.9); }
+  #crosshair::before { left: 12px; top: 3px; width: 2px; height: 20px; }
+  #crosshair::after { top: 12px; left: 3px; height: 2px; width: 20px; }
+  #crosshair.kena::before, #crosshair.kena::after { background: #ef4444; }
+
+  #hud { position: fixed; inset: 0; z-index: 6; pointer-events: none; display: none; }
+  #hpWrap { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 170px; height: 14px;
+    background: rgba(0,0,0,.5); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,.35); }
+  #hpBar { height: 100%; width: 100%; background: #22c55e; transition: width .15s; }
+  #stat { position: absolute; top: 10px; left: 12px; font-size: 13px; background: rgba(0,0,0,.45); padding: 6px 10px; border-radius: 8px; }
+  #btnKeluar { position: absolute; top: 48px; left: 12px; pointer-events: auto; font-size: 12px; padding: 6px 12px;
+    border-radius: 8px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.3); color: #fff; }
+  #minimap { position: absolute; top: 10px; right: 12px; width: 104px; height: 104px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.5); background: rgba(10,20,30,.5); }
+  #info { position: absolute; top: 120px; right: 14px; font-size: 12px; background: rgba(0,0,0,.45); padding: 4px 9px; border-radius: 8px; }
+
+  #joyBase { position: fixed; left: 28px; bottom: 36px; width: 130px; height: 130px; z-index: 5; display: none;
+    border-radius: 50%; background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.35); }
+  #joyKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px;
+    border-radius: 50%; background: rgba(255,255,255,.55); pointer-events: none; }
+  .tombol { position: fixed; z-index: 5; width: 68px; height: 68px; border-radius: 50%; display: none;
+    background: rgba(15,23,42,.55); border: 2px solid rgba(255,255,255,.7);
+    align-items: center; justify-content: center; font-size: 28px; text-align: center; line-height: 1.1; }
+  .tombol.aktif { background: rgba(34,197,94,.7); }
+  #btnTembak { right: 28px; bottom: 120px; width: 84px; height: 84px; font-size: 34px; }
+  #btnLompat { right: 24px; bottom: 28px; }
+  #btnLari { right: 118px; bottom: 28px; }
+  #btnScope { right: 124px; bottom: 124px; }
+  #scopeOv { position: fixed; inset: 0; z-index: 2; pointer-events: none; display: none;
+    background: radial-gradient(circle at center, rgba(0,0,0,0) 0, rgba(0,0,0,0) 30vmin, rgba(0,0,0,.92) 31vmin); }
+  #scopeOv::before, #scopeOv::after { content: ""; position: absolute; background: rgba(0,0,0,.85); }
+  #scopeOv::before { left: 50%; top: calc(50% - 30vmin); width: 2px; height: 60vmin; margin-left: -1px; }
+  #scopeOv::after { top: 50%; left: calc(50% - 30vmin); height: 2px; width: 60vmin; margin-top: -1px; }
+  #btnNaik { right: 212px; bottom: 28px; font-size: 22px; font-weight: 700; background: rgba(2,132,199,.75); }
+  #btnNaik span { font-size: 12px; }
+  #btnKiri { left: 24px; bottom: 40px; width: 84px; height: 84px; font-size: 34px; }
+  #btnKanan { left: 118px; bottom: 40px; width: 84px; height: 84px; font-size: 34px; }
+  #btnGas { right: 28px; bottom: 136px; width: 84px; height: 84px; font-size: 34px; background: rgba(22,163,74,.7); }
+  #btnRem { right: 28px; bottom: 40px; width: 84px; height: 84px; font-size: 34px; background: rgba(220,38,38,.7); }
+  #altBase { position: fixed; right: 28px; bottom: 30px; width: 70px; height: 190px; z-index: 5; display: none;
+    border-radius: 35px; background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.35); }
+  #altBase::before { content: "▲"; position: absolute; top: 8px; left: 0; right: 0; text-align: center; opacity: .6; font-size: 14px; }
+  #altBase::after { content: "▼"; position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; opacity: .6; font-size: 14px; }
+  #altKnob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px;
+    border-radius: 50%; background: rgba(255,255,255,.55); pointer-events: none; }
+  #btnAksi { right: 28px; bottom: 40px; width: 100px; height: 100px; font-size: 15px; font-weight: 700; background: rgba(220,38,38,.75); }
+
+  #lobby { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center;
+    background: linear-gradient(90deg, rgba(8,14,26,.92) 0%, rgba(8,14,26,.7) 45%, rgba(8,14,26,0) 80%); }
+  #lobby .panel { padding: 28px; width: min(420px, 100%); }
+  #lobby h1 { margin: 0 0 6px; font-size: 40px; line-height: 1; letter-spacing: 1px; }
+  #lobby p { margin: 0 0 22px; color: #b6c2d4; font-size: 14px; line-height: 1.4; }
+  .btn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 15px 18px; margin-bottom: 10px;
+    border: none; border-radius: 12px; font-size: 18px; font-weight: 700; color: #fff; }
+  .btn.utama { background: #16a34a; }
+  .btn.kedua { background: #1f2937; border: 1px solid #374151; }
+  .btn small { font-size: 12px; font-weight: 600; color: #fbbf24; }
+  .btn:active { transform: scale(.98); }
+  #warnaRow { display: flex; gap: 10px; align-items: center; margin-top: 16px; font-size: 13px; color: #b6c2d4; }
+  .warna { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; }
+  .warna.pilih { border-color: #fff; }
+  #petunjuk { margin-top: 14px; font-size: 12px; color: #7f8da3; }
+
+  #hasil { position: fixed; inset: 0; z-index: 12; display: none; align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(5,10,20,.8); text-align: center; padding: 20px; }
+  #hasil h2 { font-size: 44px; margin: 0 0 6px; }
+  #hasil p { margin: 0 0 20px; color: #cbd5e1; }
+  #hasil .btn { width: 240px; justify-content: center; }
+
+  #toast { position: fixed; top: 52px; left: 50%; transform: translateX(-50%); z-index: 15; background: rgba(0,0,0,.7);
+    padding: 8px 14px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; }
+  #toast.show { opacity: 1; }
+  #error { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; background: #0b1220; }
+
+
+  /* ===== tambahan Zombie Hunter ===== */
+  #fase { position: absolute; top: 32px; left: 50%; transform: translateX(-50%); font-size: 13px; background: rgba(0,0,0,.5);
+    padding: 4px 12px; border-radius: 10px; white-space: nowrap; }
+  #btnToko { position: absolute; top: 84px; left: 12px; pointer-events: auto; font-size: 12px; padding: 6px 12px;
+    border-radius: 8px; background: rgba(180,83,9,.85); border: 1px solid rgba(255,255,255,.3); color: #fff; display: none; }
+  #btnGanti { right: 212px; bottom: 104px; font-size: 26px; }
+  #btnTembak.geser { right: 124px; bottom: 100px; }
+
+  #toko { position: fixed; inset: 0; z-index: 14; display: none; align-items: center; justify-content: center; background: rgba(3,7,18,.85); }
+  .tokoBox { width: min(560px, 96vw); max-height: 92vh; display: flex; flex-direction: column; background: #111827;
+    border: 1px solid #374151; border-radius: 16px; overflow: hidden; }
+  .tokoHead { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #1f2937; font-size: 16px; }
+  .tokoHead button { background: #374151; color: #fff; border: none; border-radius: 8px; padding: 6px 12px; font-size: 16px; }
+  .tabs { display: flex; gap: 6px; padding: 8px 12px 0; }
+  .tab { flex: 1; padding: 9px 0; border: none; border-radius: 8px 8px 0 0; background: #1f2937; color: #9ca3af; font-weight: 700; font-size: 14px; }
+  .tab.pilih { background: #374151; color: #fff; }
+  #tokoIsi { overflow-y: auto; padding: 10px 12px 14px; background: #1f2937; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 10px; margin-bottom: 8px; border-radius: 10px; background: #111827; border: 1px solid #374151; }
+  .item .kiri { flex: 1; min-width: 0; }
+  .item .nama { font-weight: 700; font-size: 15px; }
+  .ket { font-size: 12px; color: #9ca3af; margin-top: 2px; line-height: 1.35; }
+  #tokoIsi button { border: none; border-radius: 8px; padding: 9px 12px; font-weight: 700; font-size: 13px; color: #fff; background: #16a34a; white-space: nowrap; }
+  #tokoIsi button.kuning { background: #d97706; }
+  #tokoIsi button.abu { background: #4b5563; }
+
+  /* ===== panel tas & meja kerja: muat di layar HP landscape ===== */
+  .panelUI { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(94vw, 420px); max-height: 86vh;
+    display: flex; flex-direction: column; background: #2a2a2a; border: 3px solid #3a7d44; border-radius: 12px; z-index: 200; }
+  .panelHead { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid #444; flex: 0 0 auto; color: #fff; font-size: 15px; }
+  .panelHead button { background: #dc2626; color: #fff; border: none; border-radius: 6px; padding: 5px 14px; font-size: 16px; }
+  .panelIsi { overflow-y: auto; padding: 8px 10px 10px; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+  .resep { display: flex; justify-content: space-between; align-items: center; background: #383838; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; color: #fff; font-size: 13px; }
+  .resep button { background: #4CAF50; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; }
+  .gridTas { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 6px; }
+  #koordinat { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); font-size: 12px; background: rgba(0,0,0,.5);
+    padding: 3px 10px; border-radius: 10px; white-space: nowrap; }
+  #bossBar { position: absolute; top: 86px; left: 50%; transform: translateX(-50%); width: min(60vw, 340px); display: none; text-align: center; font-size: 12px; font-weight: 700; }
+  #bossIsi { height: 10px; border-radius: 6px; background: #c026d3; margin-top: 2px; border: 1px solid #fff; width: 100%; }
+
+  #btnKamera, #btnPengaturan { position: absolute; top: 48px; pointer-events: auto; font-size: 12px; padding: 6px 12px; border-radius: 8px;
+    background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.3); color: #fff; display: none; }
+  #btnKamera { left: 92px; }
+  #btnPengaturan { left: 176px; }
+  .barisSet { margin-bottom: 10px; color: #fff; font-size: 13px; }
+  .barisSet input[type=range] { width: 100%; touch-action: none; margin-top: 6px; }
+  .pilihanBtn { display: flex; gap: 6px; margin-top: 5px; }
+  .pilihanBtn button, .btnReset { flex: 1; padding: 8px 4px; border: none; border-radius: 6px; background: #4b5563; color: #fff; font-size: 12px; }
+  .pilihanBtn button.pilih { background: #16a34a; }
+  .btnReset { width: 100%; margin-top: 4px; background: #374151; }
+
+  #stamWrap { position: fixed; right: 118px; bottom: 100px; width: 68px; height: 7px; z-index: 5; display: none;
+    background: rgba(0,0,0,.5); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,.35); }
+  #stamBar { height: 100%; width: 100%; background: #38bdf8; }
+</style>
+</head>
+<body>
+  <!-- === HOTBAR — DI BAWAH LAYAR === -->
+<div id="hotbar" style="position:fixed; bottom:12px; left:50%; transform:translateX(-50%); display:none; gap:6px; z-index:4;">
+<div class="hotbar-slot aktif" data-slot="0" onclick="pilihSlot(0)">
+    <span class="item-icon">🔫</span>
+    <span class="item-jumlah"></span>
+  </div>
+<div class="hotbar-slot" data-slot="1" onclick="pilihSlot(1)">
+    <span class="item-icon">🪓</span>
+    <span class="item-jumlah"></span>
+  </div>
+<div class="hotbar-slot" data-slot="2" onclick="pilihSlot(2)">
+    <span class="item-icon"></span>
+    <span class="item-jumlah"></span>
+  </div>
+<div class="hotbar-slot" data-slot="3" onclick="pilihSlot(3)">
+    <span class="item-icon"></span>
+    <span class="item-jumlah"></span>
+  </div>
+<div class="hotbar-slot" data-slot="4" onclick="pilihSlot(4)">
+    <span class="item-icon"></span>
+    <span class="item-jumlah"></span>
+  </div>
+<div class="hotbar-slot" data-slot="5" onclick="pilihSlot(5)">
+    <span class="item-icon"></span>
+    <span class="item-jumlah"></span>
+  </div>
+</div>
+
+<!-- === TOMBOL BUKA TAS & CRAFTING === -->
+<div id="barTombolTas" style="position:fixed; bottom:66px; left:50%; transform:translateX(-50%); display:none; gap:10px; z-index:4;">
+<button id="btnInventory" onclick="toggleInventory()" style="padding:8px 16px; background:#444; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🎒 Tas (E)</button>
+<button id="btnCrafting" onclick="bukaCrafting()" style="padding:8px 16px; background:#2c5c34; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🔨 Buat Benda</button>
+</div>
+
+<!-- === INVENTORY / TAS === -->
+<div id="inventoryPanel" class="panelUI" style="display:none;">
+  <div class="panelHead"><b>🎒 Tas Kamu</b><button onclick="tutupInventory()">✕</button></div>
+  <div class="panelIsi"><div id="isiInventory" class="gridTas"></div></div>
+</div>
+<div id="craftingPanel" class="panelUI" style="display:none;">
+  <div class="panelHead"><b>🔨 Meja Kerja</b><button onclick="tutupCrafting()">✕</button></div>
+  <div class="panelIsi">
+    <div id="infoKayu" style="color:#fbbf24; font-size:12px; margin-bottom:6px;"></div>
+    <div class="resep"><span>🪵×2 → 🧱 Balok Kayu</span><button onclick="buatBarang('balok')">Buat</button></div>
+    <div class="resep"><span>🪵×4 → 🪓 Kapak</span><button onclick="buatBarang('kapak')">Buat</button></div>
+    <div class="resep"><span>🧱×4 → 🏠 Dinding Rumah</span><button onclick="buatBarang('dinding')">Buat</button></div>
+    <div class="resep"><span>🪵×67 → 🗼 Menara</span><button onclick="buatBarang('menara')">Buat</button></div>
+  </div>
+</div>
+<div id="pengaturanPanel" class="panelUI" style="display:none;">
+  <div class="panelHead"><b>⚙️ Pengaturan Kamera</b><button onclick="tutupPengaturan()">✕</button></div>
+  <div class="panelIsi">
+    <div class="barisSet"><span>Sudut pandang</span>
+      <div class="pilihanBtn">
+        <button class="btnMode" data-mode="orang3" onclick="pilihModeKamera('orang3')">👤 Orang ke-3</button>
+        <button class="btnMode" data-mode="orang1" onclick="pilihModeKamera('orang1')">👁 Dari mata</button>
+      </div></div>
+    <div class="barisSet"><span>Sensitivitas geser layar: <b id="sSensVal"></b></span>
+      <input id="sSens" type="range" min="0.4" max="2.5" step="0.1" oninput="ubahSetting('sens', this.value)"></div>
+    <div class="barisSet"><span>Sudut pandang (FOV): <b id="sFovVal"></b></span>
+      <input id="sFov" type="range" min="55" max="100" step="1" oninput="ubahSetting('fov', this.value)"></div>
+    <div class="barisSet"><span>Jarak kamera (orang ke-3): <b id="sJarakVal"></b></span>
+      <input id="sJarak" type="range" min="3" max="9" step="0.5" oninput="ubahSetting('jarak', this.value)"></div>
+    <div class="barisSet"><span>Posisi bahu (orang ke-3)</span>
+      <div class="pilihanBtn">
+        <button class="btnBahu" data-bahu="-1" onclick="pilihBahu(-1)">Kiri</button>
+        <button class="btnBahu" data-bahu="0" onclick="pilihBahu(0)">Tengah</button>
+        <button class="btnBahu" data-bahu="1" onclick="pilihBahu(1)">Kanan</button>
+      </div></div>
+    <button class="btnReset" onclick="resetPengaturan()">Kembalikan ke bawaan</button>
+  </div>
+</div>
+<canvas id="dunia"></canvas>
+<div id="lookZone"></div>
+<div id="darah"></div>
+<div id="scopeOv"></div>
+<div id="crosshair"></div>
+
+<div id="hud">
+  <div id="hpWrap"><div id="hpBar"></div></div>
+  <div id="fase">🌙 Malam</div>
+  <div id="koordinat">📍 X 0 · Z 0</div>
+  <div id="bossBar"><div id="bossNama">BOSS</div><div id="bossIsi"></div></div>
+  <div id="stat">🪙 <b id="coin">0</b> &nbsp; 💀 <b id="kill">0</b></div>
+  <button id="btnKeluar">Keluar</button>
+  <button id="btnToko">🛒 Toko</button>
+  <button id="btnKamera">📷 Kamera</button>
+  <button id="btnPengaturan">⚙️</button>
+  <canvas id="minimap" width="208" height="208"></canvas>
+  <div id="info">Glock 17</div>
+</div>
+
+<div id="stamWrap"><div id="stamBar"></div></div>
+<div id="joyBase"><div id="joyKnob"></div></div>
+<div id="altBase"><div id="altKnob"></div></div>
+<div id="btnTembak" class="tombol">🔫</div>
+<div id="btnLari" class="tombol">🏃</div>
+<div id="btnLompat" class="tombol">⬆️</div>
+<div id="btnScope" class="tombol">🎯</div>
+<div id="btnGanti" class="tombol">🔄</div>
+<div id="btnNaik" class="tombol">🚗<br><span id="naikTeks">NAIK</span></div>
+<div id="btnKiri" class="tombol">◀</div>
+<div id="btnKanan" class="tombol">▶</div>
+<div id="btnGas" class="tombol">▲</div>
+<div id="btnRem" class="tombol">▼</div>
+<div id="btnAksi" class="tombol">🪂<br><span id="aksiTeks">LOMPAT</span></div>
+
+<div id="lobby">
+  <div class="panel">
+    <h1>ZOMBIE HUNTER</h1>
+    <p>Bertahan di malam hari, buru zombie, kumpulkan coin, lalu beli senjata dan kendaraan.</p>
+    <button class="btn utama" id="btnSolo">Main Solo <span>▶</span></button>
+    <button class="btn kedua" id="btnMulti">Multiplayer <small>Segera hadir</small></button>
+    <div id="warnaRow">
+      Warna karakter
+      <div class="warna pilih" data-w="0" style="background:#3b82f6"></div>
+      <div class="warna" data-w="1" style="background:#ef4444"></div>
+      <div class="warna" data-w="2" style="background:#22c55e"></div>
+      <div class="warna" data-w="3" style="background:#eab308"></div>
+    </div>
+    <div id="petunjuk">Tip: putar HP ke mode landscape. Geser layar untuk memutar kamera.</div>
+  </div>
+</div>
+
+<div id="hasil">
+  <h2 id="hasilJudul">KAMU MATI</h2>
+  <p id="hasilIsi"></p>
+  <button class="btn utama" id="btnUlang">Main lagi</button>
+  <button class="btn kedua" id="btnLobby">Ke lobby</button>
+</div>
+
+<div id="toko">
+  <div class="tokoBox">
+    <div class="tokoHead"><b>🛒 Toko</b><span>🪙 <b id="tokoCoin">0</b></span><button id="btnTutupToko">✕</button></div>
+    <div class="tabs">
+      <button class="tab pilih" data-tab="senjata">Senjata</button>
+      <button class="tab" data-tab="kendaraan">Kendaraan</button>
+      <button class="tab" data-tab="upgrade">Upgrade</button>
+      <button class="tab" data-tab="trade">Trade</button>
+    </div>
+    <div id="tokoIsi"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="error">Three.js gagal dimuat.<br>Cek koneksi internet lalu muat ulang halaman.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  // Paksa layar ke mode lanskap
+if (screen.orientation && screen.orientation.lock) {
+  screen.orientation.lock('landscape').catch(e => {
+    console.log("Rotasi tidak bisa dikunci, putar HP secara manual");
+  });
+}
+// === KONFIGURASI SURVIVAL (ubah angkanya di sini) ===
+const HIT_POHON = 4;          // berapa kali tebasan kapak untuk menumbangkan 1 pohon
+const KAYU_PER_POHON = 4;     // kayu yang didapat dari 1 pohon
+const RESPAWN_POHON = 15;     // detik sampai pohon tumbuh lagi
+const KAYU_MENARA = 67;      // kayu untuk membuat 1 menara
+
+// === DATA INVENTORY ===
+const inventori = {
+  glock:   { nama: "Glock", ikon: "🔫", jumlah: 1, hotbar: 0 },
+  kapak:   { nama: "Kapak", ikon: "🪓", jumlah: 1, hotbar: 1 },
+  kayu:    { nama: "Kayu", ikon: "🪵", jumlah: 0, hotbar: 2 },
+  balok:   { nama: "Balok Kayu", ikon: "🧱", jumlah: 0, hotbar: 3 },
+  dinding: { nama: "Dinding Rumah", ikon: "🏠", jumlah: 0, hotbar: 4 },
+  menara: { nama: "Menara", ikon: "🗼", jumlah: 0, hotbar: 5 }
+};
+const STOK_AWAL = { glock: 1, kapak: 1, kayu: 0, balok: 0, dinding: 0, menara: 0 };
+
+let slotAktif = 0;
+window.jedaUI = false;   // true saat tas / meja kerja terbuka (game berhenti sebentar)
+
+function pesan(teks) {
+  if (window.toastGame) window.toastGame(teks); else console.log(teks);
+}
+
+// barang yang sedang dipegang (null kalau slot kosong)
+function itemDipegang() {
+  for (const key in inventori) {
+    if (inventori[key].hotbar === slotAktif && inventori[key].jumlah > 0) return key;
+  }
+  return null;
+}
+
+function setNamaSenjata(nama) {
+  inventori.glock.nama = nama;
+  updateHotbar();
+}
+
+function resetInventori() {
+  for (const key in STOK_AWAL) inventori[key].jumlah = STOK_AWAL[key];
+  slotAktif = 0;
+  updateHotbar();
+  updateSenjataYangDipegang();
+}
+
+// === PILIH SLOT ===
+function pilihSlot(nomor) {
+  if (window.dapatPakaiHotbar && !window.dapatPakaiHotbar()) return;
+  slotAktif = nomor;
+  updateHotbar();
+  updateSenjataYangDipegang();
+}
+
+// === UPDATE APA YANG DIPEGANG (model 3D di tangan karakter) ===
+function updateSenjataYangDipegang() {
+  if (window.pakaiModelGame) window.pakaiModelGame();
+}
+
+// === UPDATE HOTBAR ===
+function updateHotbar() {
+  const slots = document.querySelectorAll('.hotbar-slot');
+  slots.forEach((slot, idx) => {
+    slot.classList.remove('aktif');
+    if (idx === slotAktif) slot.classList.add('aktif');
+
+    const icon = slot.querySelector('.item-icon');
+    const jumlah = slot.querySelector('.item-jumlah');
+
+    let barang = null;
+    for (const key in inventori) {
+      if (inventori[key].hotbar === idx && inventori[key].jumlah > 0) {
+        barang = inventori[key];
+        break;
+      }
+    }
+
+    if (barang) {
+      icon.textContent = barang.ikon;
+      jumlah.textContent = barang.jumlah > 1 ? barang.jumlah : '';
+    } else {
+      icon.textContent = '';
+      jumlah.textContent = '';
+    }
+  });
+
+  // ikon tombol aksi mengikuti barang yang dipegang
+  const tombolAksi = document.getElementById('btnTembak');
+  if (tombolAksi) {
+    const ikonAksi = { glock: "🔫", kapak: "🪓", dinding: "🧱", menara: "🗼" };
+    tombolAksi.textContent = ikonAksi[itemDipegang()] || "✋";
+  }
+  const infoKayu = document.getElementById('infoKayu');
+  if (infoKayu) infoKayu.textContent = "🪵 Kayu kamu: " + inventori.kayu.jumlah + " (Menara butuh " + KAYU_MENARA + ")";
+}
+
+// === INVENTORY / TAS ===
+function perbaruiJeda() {
+  const buka = id => { const e = document.getElementById(id); return !!(e && e.style.display === 'flex'); };
+  window.jedaUI = buka('inventoryPanel') || buka('craftingPanel') || buka('pengaturanPanel');
+}
+
+// === PENGATURAN KAMERA (tersimpan di HP) ===
+const KUNCI_SET = "zombieHunterSetting";
+const SET_BAWAAN = { sens: 1, fov: 70, jarak: 5.5, bahu: 1, mode: "orang3" };
+const pengaturan = Object.assign({}, SET_BAWAAN);
+try { const raw = localStorage.getItem(KUNCI_SET); if (raw) Object.assign(pengaturan, JSON.parse(raw)); } catch (e) {}
+function simpanPengaturan() { try { localStorage.setItem(KUNCI_SET, JSON.stringify(pengaturan)); } catch (e) {} }
+function isiPanelPengaturan() {
+  const set = (id, v, label) => {
+    const el = document.getElementById(id); if (el) el.value = v;
+    const l = document.getElementById(id + 'Val'); if (l) l.textContent = label;
+  };
+  set('sSens', pengaturan.sens, Number(pengaturan.sens).toFixed(1) + 'x');
+  set('sFov', pengaturan.fov, Math.round(pengaturan.fov) + '°');
+  set('sJarak', pengaturan.jarak, Number(pengaturan.jarak).toFixed(1) + ' m');
+  document.querySelectorAll('.btnBahu').forEach(b => b.classList.toggle('pilih', +b.dataset.bahu === pengaturan.bahu));
+  document.querySelectorAll('.btnMode').forEach(b => b.classList.toggle('pilih', b.dataset.mode === pengaturan.mode));
+}
+function ubahSetting(kunci, nilai) { pengaturan[kunci] = parseFloat(nilai); simpanPengaturan(); isiPanelPengaturan(); }
+function pilihBahu(n) { pengaturan.bahu = n; simpanPengaturan(); isiPanelPengaturan(); }
+function pilihModeKamera(m) { if (window.setModeKamera) window.setModeKamera(m); }
+function resetPengaturan() { Object.assign(pengaturan, SET_BAWAAN); simpanPengaturan(); if (window.setModeKamera) window.setModeKamera(pengaturan.mode); isiPanelPengaturan(); }
+function bukaPengaturan() {
+  if (window.dapatPakaiHotbar && !window.dapatPakaiHotbar()) return;
+  const panel = document.getElementById('pengaturanPanel');
+  if (panel) panel.style.display = 'flex';
+  isiPanelPengaturan();
+  perbaruiJeda();
+}
+function tutupPengaturan() {
+  const panel = document.getElementById('pengaturanPanel');
+  if (panel) panel.style.display = 'none';
+  perbaruiJeda();
+}
+
+function toggleInventory() {
+  if (window.dapatPakaiHotbar && !window.dapatPakaiHotbar() && window.jedaUI === false) return;
+  const panel = document.getElementById('inventoryPanel');
+  if (!panel) return;
+  const mauBuka = panel.style.display !== 'flex';
+  panel.style.display = mauBuka ? 'flex' : 'none';
+  if (mauBuka) updateInventoryDisplay();
+  perbaruiJeda();
+}
+
+function tutupInventory() {
+  const panel = document.getElementById('inventoryPanel');
+  if (panel) panel.style.display = 'none';
+  perbaruiJeda();
+}
+
+function updateInventoryDisplay() {
+  const wadah = document.getElementById('isiInventory');
+  if (!wadah) return;
+  wadah.innerHTML = '';
+  for (const key in inventori) {
+    if (inventori[key].jumlah > 0) {
+      wadah.innerHTML += `
+        <div class="inventory-slot" title="${inventori[key].nama}">
+          <span class="item-icon">${inventori[key].ikon}</span>
+          <span class="item-jumlah">${inventori[key].jumlah}</span>
+        </div>
+      `;
+    }
+  }
+}
+
+// === CRAFTING ===
+function bukaCrafting() {
+  if (window.dapatPakaiHotbar && !window.dapatPakaiHotbar()) return;
+  const panel = document.getElementById('craftingPanel');
+  if (panel) panel.style.display = 'flex';
+  updateHotbar();
+  perbaruiJeda();
+}
+
+function tutupCrafting() {
+  const panel = document.getElementById('craftingPanel');
+  if (panel) panel.style.display = 'none';
+  perbaruiJeda();
+}
+
+const RESEP = {
+  balok:   { butuh: { kayu: 2 } },
+  kapak:   { butuh: { kayu: 4 } },
+  dinding: { butuh: { balok: 4 } },
+  menara: { butuh: { kayu: KAYU_MENARA } }
+};
+
+function buatBarang(jenis) {
+  const resep = RESEP[jenis];
+  if (!resep) return;
+  for (const bahan in resep.butuh) {
+    if (inventori[bahan].jumlah < resep.butuh[bahan]) {
+      pesan("Bahan kurang: butuh " + resep.butuh[bahan] + " " + inventori[bahan].nama);
+      return;
+    }
+  }
+  for (const bahan in resep.butuh) inventori[bahan].jumlah -= resep.butuh[bahan];
+  inventori[jenis].jumlah += 1;
+  updateHotbar();
+  updateInventoryDisplay();
+  pesan(inventori[jenis].ikon + " " + inventori[jenis].nama + " dibuat");
+}
+
+// === TOMBOL KEYBOARD (hanya satu listener, supaya tas tidak buka-tutup sendiri) ===
+document.addEventListener('keydown', (e) => {
+  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.key.toLowerCase() === 'e') toggleInventory();
+  const angka = parseInt(e.key);
+  if (angka >= 1 && angka <= 6) pilihSlot(angka - 1);
+});
+
+updateHotbar();
+
+if (typeof THREE === "undefined") {
+  document.getElementById("error").style.display = "flex";
+} else {
+  mulai();
+}
+
+function mulai() {
+  const $ = id => document.getElementById(id);
+
+  // ================= Renderer, scene, kamera =================
+  const canvas = $("dunia");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  const scene = new THREE.Scene();
+  const WARNA_LANGIT = 0x9fd0f0;
+  scene.background = new THREE.Color(WARNA_LANGIT);
+  scene.fog = new THREE.Fog(WARNA_LANGIT, 70, 280);
+  const camera = new THREE.PerspectiveCamera(65, 1, 0.3, 4000);
+  const hemi = new THREE.HemisphereLight(0xdff0ff, 0x3b5d2a, 0.95);
+  scene.add(hemi);
+  const matahari = new THREE.DirectionalLight(0xfff2cc, 0.8);
+  matahari.position.set(80, 140, 50);
+  scene.add(matahari);
+
+  function ukuran() {
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", ukuran);
+  ukuran();
+
+  // ================= Util =================
+  let seed = 98765;
+  function acak() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function selisihSudut(a, b) {
+    let d = b - a;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+  function jarakSeg3D(ax, ay, az, bx, by, bz, px, py, pz) {
+    const dx = bx - ax, dy = by - ay, dz = bz - az, l2 = dx * dx + dy * dy + dz * dz;
+    let t = l2 > 0 ? ((px - ax) * dx + (py - ay) * dy + (pz - az) * dz) / l2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const cx = ax + dx * t - px, cy = ay + dy * t - py, cz = az + dz * t - pz;
+    return Math.sqrt(cx * cx + cy * cy + cz * cz);
+  }
+  function jarakSeg2D(ax, az, bx, bz, px, pz) {
+    const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
+    let t = l2 > 0 ? ((px - ax) * dx + (pz - az) * dz) / l2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(ax + dx * t - px, az + dz * t - pz);
+  }
+  let toastTimer = null;
+  function toast(teks) {
+    const t = $("toast");
+    t.textContent = teks; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+  }
+
+  // ================= Dunia tak terbatas (dibuat per potongan / chunk) =================
+  const UKURAN = 600;                 // hanya dipakai untuk panjang rute pesawat
+  const BATAS = 1e7;                  // praktis tanpa batas
+  let radMuat = 2;                    // berubah jadi RAD_BOSS saat ada zombie mega
+  const CH = 80, RAD = 2;             // ukuran 1 chunk, dan jumlah chunk yang dimuat di sekeliling pemain (RAD 2 = 5x5)
+  function tinggiDi(x, z) {
+    return Math.sin(x * 0.02) * 8 + Math.cos(z * 0.025) * 8 + Math.sin((x + z) * 0.012) * 14 +
+           Math.sin(x * 0.08) * Math.cos(z * 0.07) * 2 + Math.sin(x * 0.006 - z * 0.009) * 16;
+  }
+  const kunci = (cx, cz) => cx + "," + cz;
+  function hash2(cx, cz) {
+    let h = Math.imul(cx, 374761393) ^ Math.imul(cz, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+  function rngChunk(cx, cz, salt) {
+    let s = (hash2(cx, cz) + Math.imul(salt, 2654435761)) >>> 0;
+    if (s === 0) s = 123456789;
+    return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  }
+
+  // ---- rintangan disimpan per sel (cepat dicari walau dunia tak terbatas) ----
+  const gridR = new Map(), cacheR = new Map();
+  let versiR = 0;
+  function tambahRintangan(o) {
+    o.sel = kunci(Math.floor(o.x / CH), Math.floor(o.z / CH));
+    let a = gridR.get(o.sel);
+    if (!a) { a = []; gridR.set(o.sel, a); }
+    a.push(o); versiR++; cacheR.clear();
+  }
+  function hapusRintangan(o) {
+    const a = gridR.get(o.sel);
+    if (!a) return;
+    const i = a.indexOf(o);
+    if (i >= 0) a.splice(i, 1);
+    versiR++; cacheR.clear();
+  }
+  function rintanganDekat(x, z) {
+    const cx = Math.floor(x / CH), cz = Math.floor(z / CH), k = kunci(cx, cz);
+    let c = cacheR.get(k);
+    if (!c) {
+      const arr = [];
+      for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+        const a = gridR.get(kunci(cx + dx, cz + dz));
+        if (a) for (const o of a) arr.push(o);
+      }
+      c = arr; cacheR.set(k, c);
+    }
+    return c;
+  }
+  function dorongKeluar(e, radius) {
+    for (const o of rintanganDekat(e.x, e.z)) {
+      if (o.top !== undefined && e.y > o.top) continue;       // sedang berada di atas (mis. di menara)
+      const dx = e.x - o.x, dz = e.z - o.z, min = o.r + radius;
+      if (Math.abs(dx) > min || Math.abs(dz) > min) continue;
+      const d = Math.hypot(dx, dz);
+      if (d < min && d > 0.0001) { e.x = o.x + dx / d * min; e.z = o.z + dz / d * min; }
+    }
+  }
+
+  // ---- bahan bersama ----
+  const dummy = new THREE.Object3D();
+  const matTanah = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const geoBatang = new THREE.CylinderGeometry(0.25, 0.35, 2, 6), geoDaun = new THREE.ConeGeometry(1.5, 4, 7), geoBatu = new THREE.DodecahedronGeometry(1);
+  const matBatang = new THREE.MeshLambertMaterial({ color: 0x6b4423 }), matDaun = new THREE.MeshLambertMaterial({ color: 0x1e5c2a }), matBatu = new THREE.MeshLambertMaterial({ color: 0x8a8f98 });
+  const bBunker = new THREE.MeshLambertMaterial({ color: 0x7b8794 }), bAtap = new THREE.MeshLambertMaterial({ color: 0x4b5563 });
+  const geoBunker = new THREE.BoxGeometry(6, 4, 6), geoAtap = new THREE.BoxGeometry(7, 0.5, 7);
+  const cRendah = new THREE.Color(0x2b6e2f), cTinggi = new THREE.Color(0x86c25a), cTmp = new THREE.Color();
+  const chunks = new Map();
+  const medkits = [];                 // semua medkit di chunk yang sedang termuat
+  const medkitAmbil = new Set();      // chunk yang medkitnya sudah diambil (pulih tiap pagi)
+
+  function buatChunk(cx, cz) {
+    const ch = { cx, cz, key: kunci(cx, cz), aktif: true, meshes: [], obs: [], pohon: [], batangI: null, daunI: null, medkit: null, medkitPos: null };
+    const rnd = rngChunk(cx, cz, 1);
+    const x0 = cx * CH, z0 = cz * CH, SEG = 20;
+
+    // tanah
+    const geo = new THREE.PlaneGeometry(CH, CH, SEG, SEG);
+    geo.rotateX(-Math.PI / 2);
+    geo.translate(x0 + CH / 2, 0, z0 + CH / 2);
+    const pos = geo.attributes.position, warna = new Float32Array(pos.count * 3), nor = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), z = pos.getZ(i), h = tinggiDi(x, z);
+      pos.setY(i, h);
+      cTmp.copy(cRendah).lerp(cTinggi, klem((h + 25) / 55, 0, 1) * 0.8 + rnd() * 0.2);
+      warna[i * 3] = cTmp.r; warna[i * 3 + 1] = cTmp.g; warna[i * 3 + 2] = cTmp.b;
+      const nx = tinggiDi(x - 1, z) - tinggiDi(x + 1, z), nz = tinggiDi(x, z - 1) - tinggiDi(x, z + 1), l = Math.hypot(nx, 2, nz);
+      nor[i * 3] = nx / l; nor[i * 3 + 1] = 2 / l; nor[i * 3 + 2] = nz / l;
+    }
+    geo.setAttribute("color", new THREE.BufferAttribute(warna, 3));
+    geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+    const tanah = new THREE.Mesh(geo, matTanah);
+    scene.add(tanah); ch.meshes.push(tanah);
+
+    // bunker (jarang)
+    if (rnd() < 0.07 && Math.hypot(x0 + CH / 2, z0 + CH / 2) > 40) {
+      const x = x0 + 20 + rnd() * 40, z = z0 + 20 + rnd() * 40, y = tinggiDi(x, z);
+      const b = new THREE.Mesh(geoBunker, bBunker); b.position.set(x, y + 2, z);
+      const a = new THREE.Mesh(geoAtap, bAtap); a.position.set(x, y + 4.2, z);
+      scene.add(b, a); ch.meshes.push(b, a);
+      ch.obs.push({ x, z, r: 3.8, h: 4.5 });
+    }
+
+    // pohon
+    const jumPohon = 7 + Math.floor(rnd() * 6);
+    for (let i = 0; i < jumPohon; i++) {
+      const x = x0 + rnd() * CH, z = z0 + rnd() * CH, s = 0.8 + rnd() * 1.0;
+      if (Math.hypot(x, z) < 14 || ch.obs.some(o => Math.hypot(o.x - x, o.z - z) < o.r + 3)) continue;
+      const o = { x, z, r: 0.6 * s, h: 6 * s };
+      ch.obs.push(o);
+      ch.pohon.push({ x, z, y: tinggiDi(x, z), s, o, hp: HIT_POHON, tumbang: false, sisa: 0, ch, idx: ch.pohon.length });
+    }
+    if (ch.pohon.length) {
+      ch.batangI = new THREE.InstancedMesh(geoBatang, matBatang, ch.pohon.length);
+      ch.daunI = new THREE.InstancedMesh(geoDaun, matDaun, ch.pohon.length);
+      ch.batangI.frustumCulled = false; ch.daunI.frustumCulled = false;
+      ch.pohon.forEach(t => aturPohon(t, true));
+      scene.add(ch.batangI, ch.daunI); ch.meshes.push(ch.batangI, ch.daunI);
+    }
+
+    // batu
+    const batu = [], jumBatu = 1 + Math.floor(rnd() * 3);
+    for (let i = 0; i < jumBatu; i++) {
+      const x = x0 + rnd() * CH, z = z0 + rnd() * CH, s = 0.7 + rnd() * 1.6, rx = rnd() * 3, ry = rnd() * 3;
+      if (Math.hypot(x, z) < 10 || ch.obs.some(o => Math.hypot(o.x - x, o.z - z) < o.r + s + 1)) continue;
+      batu.push({ x, z, y: tinggiDi(x, z), s, rx, ry });
+      ch.obs.push({ x, z, r: s * 0.9, h: s * 1.6 });
+    }
+    if (batu.length) {
+      const bI = new THREE.InstancedMesh(geoBatu, matBatu, batu.length);
+      batu.forEach((t, i) => {
+        dummy.position.set(t.x, t.y + t.s * 0.4, t.z); dummy.rotation.set(t.rx, t.ry, 0);
+        dummy.scale.setScalar(t.s); dummy.updateMatrix(); bI.setMatrixAt(i, dummy.matrix);
+      });
+      bI.frustumCulled = false;
+      scene.add(bI); ch.meshes.push(bI);
+    }
+
+    // medkit (tempat tetap per chunk, muncul lagi tiap pagi)
+    if (rnd() < 0.3) {
+      let x, z, n = 0;
+      do { x = x0 + 5 + rnd() * (CH - 10); z = z0 + 5 + rnd() * (CH - 10); n++; }
+      while (n < 8 && ch.obs.some(o => Math.hypot(o.x - x, o.z - z) < o.r + 1.5));
+      ch.medkitPos = { x, z };
+      if (!medkitAmbil.has(ch.key)) pasangMedkit(ch);
+    }
+
+    ch.obs.forEach(tambahRintangan);
+    return ch;
+  }
+  function hapusChunk(ch) {
+    ch.aktif = false;
+    ch.meshes.forEach(m => { scene.remove(m); if (m.geometry && m === ch.meshes[0]) m.geometry.dispose(); if (m.dispose) m.dispose(); });
+    ch.obs.forEach(hapusRintangan);
+    if (ch.medkit) { scene.remove(ch.medkit.g); const i = medkits.indexOf(ch.medkit); if (i >= 0) medkits.splice(i, 1); }
+    chunks.delete(ch.key);
+  }
+  let chunkPcx = null, chunkPcz = null, chunkMasihPerlu = true, radTerakhir = 2;
+  function updateChunks(px, pz, batas) {
+    const pcx = Math.floor(px / CH), pcz = Math.floor(pz / CH);
+    if (pcx === chunkPcx && pcz === chunkPcz && !chunkMasihPerlu && radMuat === radTerakhir) return;
+    chunkPcx = pcx; chunkPcz = pcz; radTerakhir = radMuat;
+    for (const ch of Array.from(chunks.values())) {
+      if (Math.abs(ch.cx - pcx) > radMuat + 1 || Math.abs(ch.cz - pcz) > radMuat + 1) hapusChunk(ch);
+    }
+    const perlu = [];
+    for (let dx = -radMuat; dx <= radMuat; dx++) for (let dz = -radMuat; dz <= radMuat; dz++) {
+      if (!chunks.has(kunci(pcx + dx, pcz + dz))) perlu.push([pcx + dx, pcz + dz, Math.abs(dx) + Math.abs(dz)]);
+    }
+    perlu.sort((a, b) => a[2] - b[2]);
+    let n = 0;
+    for (const [cx, cz] of perlu) {
+      if (n >= batas) break;
+      chunks.set(kunci(cx, cz), buatChunk(cx, cz)); n++;
+    }
+    chunkMasihPerlu = perlu.length > n;
+  }
+
+  // ================= Model karakter =================
+  function kotak(w, h, d, bahan, x, y, z) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bahan);
+    m.position.set(x, y, z);
+    return m;
+  }
+  function buatKarakter(warnaBaju, warnaHelm) {
+    const g = new THREE.Group(), pose = new THREE.Group();
+    g.add(pose);
+    const bBaju = new THREE.MeshLambertMaterial({ color: warnaBaju });
+    const bKulit = new THREE.MeshLambertMaterial({ color: 0xf1c8a0 });
+    const bHelm = new THREE.MeshLambertMaterial({ color: warnaHelm });
+    const bCelana = new THREE.MeshLambertMaterial({ color: 0x3f4f2a });
+    const bGelap = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const bKayu = new THREE.MeshLambertMaterial({ color: 0x7a4a21 });
+    pose.add(kotak(0.9, 1.1, 0.5, bBaju, 0, 1.6, 0));
+    pose.add(kotak(0.6, 0.6, 0.6, bKulit, 0, 2.5, 0));
+    pose.add(kotak(0.7, 0.3, 0.7, bHelm, 0, 2.85, 0));
+    const kakiKiri = new THREE.Group(), kakiKanan = new THREE.Group();
+    kakiKiri.add(kotak(0.35, 1.0, 0.4, bCelana, 0, -0.5, 0));
+    kakiKanan.add(kotak(0.35, 1.0, 0.4, bCelana, 0, -0.5, 0));
+    kakiKiri.position.set(-0.22, 1.05, 0); kakiKanan.position.set(0.22, 1.05, 0);
+    pose.add(kakiKiri, kakiKanan);
+    // lengan memegang senjata
+    const lenganK = new THREE.Group(), lenganR = new THREE.Group();
+    lenganK.add(kotak(0.25, 0.8, 0.25, bBaju, 0, -0.4, 0));
+    lenganR.add(kotak(0.25, 0.8, 0.25, bBaju, 0, -0.4, 0));
+    lenganK.position.set(-0.6, 2.05, 0); lenganR.position.set(0.6, 2.05, 0);
+    lenganK.rotation.set(-1.35, 0, -0.25); lenganR.rotation.set(-1.25, 0, 0.1);
+    pose.add(lenganK, lenganR);
+    // AK-47
+    const senjata = new THREE.Group();
+    senjata.add(kotak(0.12, 0.16, 0.7, bGelap, 0, 0, 0));
+    senjata.add(kotak(0.05, 0.05, 0.5, bGelap, 0, 0.03, 0.55));
+    senjata.add(kotak(0.1, 0.1, 0.35, bKayu, 0, -0.01, 0.38));
+    senjata.add(kotak(0.1, 0.18, 0.35, bKayu, 0, -0.03, -0.5));
+    const mag = kotak(0.08, 0.32, 0.12, bKayu, 0, -0.22, 0.08); mag.rotation.x = 0.3;
+    senjata.add(mag);
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0.03, 0.85);
+    const flash = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.35), new THREE.MeshBasicMaterial({ color: 0xffd34d }));
+    flash.position.set(0, 0.03, 0.95); flash.visible = false;
+    senjata.add(muzzle, flash);
+    senjata.position.set(0.3, 1.75, 0.55);
+    pose.add(senjata);
+    return { g, pose, kakiKiri, kakiKanan, senjata, muzzle, flash, bBaju };
+  }
+
+  // Parasut
+  const parasut = new THREE.Group();
+  const kubah = new THREE.Mesh(new THREE.SphereGeometry(3, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshLambertMaterial({ color: 0xf87171, side: THREE.DoubleSide }));
+  kubah.position.y = 5.5;
+  parasut.add(kubah);
+  const bTali = new THREE.LineBasicMaterial({ color: 0xffffff });
+  [[-2.8, 0], [2.8, 0], [0, -2.8], [0, 2.8]].forEach(([x, z]) => {
+    const gt = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 5.5, z), new THREE.Vector3(0, 2.8, 0)]);
+    parasut.add(new THREE.Line(gt, bTali));
+  });
+  parasut.visible = false;
+
+  // Pesawat
+  const pesawat = new THREE.Group();
+  const bPes = new THREE.MeshLambertMaterial({ color: 0xd1d5db });
+  const bMerah = new THREE.MeshLambertMaterial({ color: 0xdc2626 });
+  pesawat.add(kotak(2.2, 2.2, 11, bPes, 0, 0, 0));
+  pesawat.add(kotak(15, 0.3, 2.8, bPes, 0, -0.2, 0.5));
+  pesawat.add(kotak(5, 0.3, 1.6, bPes, 0, 0.3, -5));
+  pesawat.add(kotak(0.3, 2.2, 1.6, bMerah, 0, 1.3, -5));
+  pesawat.add(kotak(2.3, 0.5, 3, bMerah, 0, 0.2, 4.2));
+  pesawat.scale.setScalar(1.6);
+  pesawat.visible = false;
+  scene.add(pesawat);
+
+  // Pemain
+  const WARNA_PEMAIN = [0x3b82f6, 0xef4444, 0x22c55e, 0xeab308];
+  const pemain = buatKarakter
+  (WARNA_PEMAIN[0], 0x3f4f2a);
+  pemain.g.add(parasut);
+  scene.add(pemain.g);
+  // ⭐ EXPOSE GLOBAL (biar Dev Monster bisa akses)
+window.pemain = pemain;
+window.p = p;
+
+  // ================= KONFIGURASI (ubah angka di sini kalau mau) =================
+  // ---- stamina lari ----
+  const STAMINA_MAKS = 100;
+  const STAMINA_BOROS = 20;        // per detik saat lari  (100 / 20 = lari kencang maksimal 5 detik)
+  const STAMINA_PULIH_DIAM = 18;   // per detik saat diam
+  const STAMINA_PULIH_JALAN = 10;  // per detik saat jalan biasa
+  const STAMINA_BISA_LARI_LAGI = 30;   // setelah kecapekan, harus pulih sampai angka ini baru bisa lari lagi
+  const HARI_AWAL = 1;            // isi 5 / 10 / 15 untuk langsung tes zombie tank, boss, raksasa
+  const ZOMBIE_MAKS_MALAM = 150;  // batas jumlah zombie per gelombang (tanpa batas, gelombang 10 = 3.000+ zombie)
+  const GEL_CEPAT = 2, GEL_TEBAL = 3, GEL_TENTARA = 4, GEL_TANK = 5, GEL_RAKSASA = 15, GEL_TITAN = 8;   // gelombang mulai munculnya
+  const GEL_BOSS = 15;            // boss muncul tiap kelipatan ini: gelombang 15, 30, 45, ...
+  const SKALA_TITAN = 100, SKALA_KOLOSUS = 150, SKALA_BOSS = 200;   // ukuran dibanding zombie biasa (1x)
+  const KURSI_MAKS = 5;           // maksimal penghuni satu kendaraan (termasuk sopir)
+  const RAD_BOSS = 3;             // jarak muat dunia saat ada zombie mega (lebih jauh, supaya kakinya tidak melayang)
+  const HADIAH_GELOMBANG = 25;    // hadiah coin selamat gelombang 1, lalu x2 tiap gelombang berikutnya
+  const TRADE = [
+    { id: "kayu",    nama: "🪵 Kayu",          jual: 4,   beli: 10 },
+    { id: "balok",   nama: "🧱 Balok Kayu",    jual: 10,  beli: 25 },
+    { id: "dinding", nama: "🏠 Dinding Rumah", jual: 40,  beli: 100 },
+    { id: "menara",  nama: "🗼 Menara",        jual: 200, beli: 500 }
+  ];
+  const COIN_AWAL = 0;            // isi 50000 kalau mau tes belanja
+  const ZOMBIE_AWAL = 6;          // malam 1 = 6, malam 2 = 12, malam 3 = 24, dst (x2)
+  const DURASI_PAGI = 60;         // detik
+  const MAKS_SERENTAK = 40;       // zombie hidup bersamaan (sisanya antre) supaya HP tidak berat
+  const SENJATA = {
+    glock:   { nama: "Glock 17", harga: 0,    dmg: 34, jeda: 0.22, pelet: 1, sebar: 0.008, ammo: 1000, info: "Pistol standar" },
+    uzi:     { nama: "UZI",      harga: 400,  dmg: 18, jeda: 0.07, pelet: 1, sebar: 0.03,  ammo: 1000, info: "Tembakan cepat" },
+    shotgun: { nama: "Shotgun",  harga: 800,  dmg: 16, jeda: 0.85, pelet: 7, sebar: 0.07,  ammo: 1000, info: "7 peluru sekali tembak" },
+    ak:      { nama: "AK-47",    harga: 1500, dmg: 30, jeda: 0.10, pelet: 1, sebar: 0.015, ammo: 1000, info: "Kuat dan cepat" },
+    minigun: { nama: "Mini Machine Gun", harga: 4000, dmg: 12, jeda: 0.09, pelet: 5, sebar: 0.045, ammo: 1500, pakaiAmmo: 5, info: "Cepat, 5 peluru sekali tembak" }
+  };
+  const KEND = {
+    mobil: { nama: "Mobil",      ikon: "🚗", harga: 1000,  senjata: false, boros: 0.6, ammo: 0, hp: 150 },
+    tank:  { nama: "Tank",       ikon: "🛡️", harga: 10000, senjata: true,  boros: 0.8, ammo: 2000, hp: 700 },
+    heli:  { nama: "Helikopter", ikon: "🚁", harga: 15000, senjata: true,  boros: 1.0, ammo: 2000, hp: 300 },
+    jet:   { nama: "Jet Tempur", ikon: "✈️", harga: 25000, senjata: true,  boros: 1.4, ammo: 2000, hp: 250 }
+  };
+  const HARGA_UPG = { ammoUn: 2000, fuelUn: 3000, isiBensin: 300, isiPeluru: 300, isiDarah: 800 };
+  const klem = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fmt = n => n.toLocaleString("id-ID");
+
+  // ================= State =================
+  let status = "lobby", terbuka = false, tokoBuka = false;
+  /* ⭐ MONSTER STATE */
+let monsterActive = false;
+let monsterModel = null;
+let monsterAura = null;
+let monsterGlow = null;
+  const p = { x: 0, z: 0, y: 0, vx: 0, vy: 0, vz: 0, hadap: 0, diTanah: true, hp: 100 };
+  const kam = { yaw: 0, pitch: 0.3 };
+  const input = { jx: 0, jy: 0, lari: false, lompat: false, tembak: false, gas: false, rem: false, kiri: false, kanan: false, alt: 0 };
+  const peluru = [], efek = [];
+  let stamina = 100, capek = false;
+  let megaAda = false, bossKalah = 0;
+  let kills = 0, cdTembak = 0, cdKend = 0, flashT = 0, lobbyAngle = 0, scope = false, antrean = 0, spawnT = 0, frame = 0;
+  let hari = 1, faseHari = "malam", pagiT = 0, faseT = 0, langit = 0, langitTarget = 0;
+  let mobil = null, dekatMobil = null;
+  let coin = 0, senjataAktif = "glock";
+  const rute = { x: 0, z: 0, y: 140, hx: 1, hz: 0, jarak: 0 };
+  const tombolKey = {};
+  const gudang = { senjata: {}, kend: {} };
+  const vDir = new THREE.Vector3(), vTitik = new THREE.Vector3();
+
+  function resetGudang() {
+    coin = COIN_AWAL; senjataAktif = "glock";
+    for (const id in SENJATA) gudang.senjata[id] = { ada: id === "glock", ammo: id === "glock" ? SENJATA.glock.ammo : 0, un: false };
+    for (const id in KEND) {
+      const lama = gudang.kend[id];
+      if (lama && lama.obj) scene.remove(lama.obj.g);
+      gudang.kend[id] = kendBaru(id);
+    }
+  }
+  function kendBaru(id) {
+    return { ada: false, hp: KEND[id].hp, bensin: 100, peluru: KEND[id].ammo, unBensin: false, unPeluru: false, obj: null, warn20: false, warn0: false };
+  }
+  function jumlahSenjata() { return Object.values(gudang.senjata).filter(s => s.ada).length; }
+
+  // ================= Senjata di tangan: pistol =================
+  const bPistol = new THREE.MeshLambertMaterial({ color: 0x1f1f1f });
+  const pistol = new THREE.Group();
+  pistol.add(kotak(0.1, 0.14, 0.42, bPistol, 0, 0, 0), kotak(0.09, 0.26, 0.12, bPistol, 0, -0.17, -0.1));
+  const muzzleP = new THREE.Object3D(); muzzleP.position.set(0, 0.03, 0.26);
+  const flashP = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.3), new THREE.MeshBasicMaterial({ color: 0xffd34d }));
+  flashP.position.set(0, 0.03, 0.38); flashP.visible = false;
+  pistol.add(muzzleP, flashP);
+  pistol.position.set(0.3, 1.75, 0.5);
+  pemain.pose.add(pistol);
+  const bGagang = new THREE.MeshLambertMaterial({ color: 0x7a4a21 });
+  const bBesi = new THREE.MeshLambertMaterial({ color: 0xb8bcc2 });
+  const kapakG = new THREE.Group();
+  kapakG.add(kotak(0.09, 0.09, 0.9, bGagang, 0, 0, 0.1), kotak(0.07, 0.38, 0.3, bBesi, 0, 0.16, 0.5));
+  kapakG.position.set(0.3, 1.75, 0.45); kapakG.rotation.x = -0.3; kapakG.visible = false;
+  pemain.pose.add(kapakG);
+  function pakaiModel() {
+    const it = itemDipegang();
+    const senjata = it === "glock";
+    pistol.visible = senjata && senjataAktif === "glock";
+    pemain.senjata.visible = senjata && senjataAktif !== "glock";
+    kapakG.visible = it === "kapak";
+    const s = senjataAktif === "uzi" ? 0.65 : senjataAktif === "minigun" ? 1.2 : 1;
+    pemain.senjata.scale.set(s, s, senjataAktif === "shotgun" ? 1.15 : senjataAktif === "minigun" ? 1.35 : s);
+    setNamaSenjata(SENJATA[senjataAktif].nama);
+  }
+  function tampilSenjata(v) {
+    if (v) pakaiModel(); else { pistol.visible = false; pemain.senjata.visible = false; kapakG.visible = false; }
+  }
+
+  // ================= Zombie: biasa, cepat, tebal, tentara, tank, raksasa, boss =================
+  const TIPE_Z = {
+    biasa:   { nama: "Zombie",         r: 1.0, cy: 1.3, skala: 1,    coin: 25,   jangkau: 1.8, dmg: 10, jeda: 0.9, tabrak: 4,  bar: 0 },
+    cepat:   { nama: "Zombie Cepat",   r: 1.0, cy: 1.2, skala: 0.9,  coin: 35,   jangkau: 1.8, dmg: 8,  jeda: 0.6, tabrak: 3,  bar: 0 },
+    tebal:   { nama: "Zombie Tebal",   r: 1.3, cy: 1.6, skala: 1.3,  coin: 60,   jangkau: 2.3, dmg: 15, jeda: 1.0, tabrak: 8,  bar: 0 },
+    tentara: { nama: "Zombie Tentara", r: 1.0, cy: 1.3, skala: 1,    coin: 50,   jangkau: 1.8, dmg: 8,  jeda: 1.0, tabrak: 5,  bar: 0 },
+    tank:    { nama: "Zombie Tank",    r: 2.8, cy: 1.8, skala: 1,    coin: 250,  jangkau: 0,   dmg: 0,  jeda: 0,   tabrak: 60, bar: 5.5 },
+    raksasa: { nama: "Zombie Raksasa", r: 2.6, cy: 3.4, skala: 2.6,  coin: 500,  jangkau: 4.2, dmg: 40, jeda: 1.4, tabrak: 50, bar: 9 }
+  };
+  function tipeMega(nama, S, coin) { return { nama, mega: true, skala: S, r: 0.5 * S, cy: 1.4 * S, coin, jangkau: 0.45 * S, dmg: 60, jeda: 2.2, tabrak: 120, bar: 3.2 * S }; }
+  TIPE_Z.titan = tipeMega("Zombie Titan", SKALA_TITAN, 1500);
+  TIPE_Z.kolosus = tipeMega("Zombie Kolosus", SKALA_KOLOSUS, 3000);
+  TIPE_Z.boss = tipeMega("BOSS", SKALA_BOSS, 10000);
+  const WARNA_Z = {
+    biasa:   { kulit: 0x7fa86a, baju: 0 },
+    cepat:   { kulit: 0xb0b86a, baju: 0x7a2a2a },
+    tebal:   { kulit: 0x56706a, baju: 0x2f3a46 },
+    tentara: { kulit: 0x7fa86a, baju: 0x3f5a34 },
+    raksasa: { kulit: 0x5b8a4a, baju: 0x2b1d33 },
+    boss:    { kulit: 0x7a4a9a, baju: 0x1a1020 },
+    titan:   { kulit: 0xa0603a, baju: 0x3a2418 },
+    kolosus: { kulit: 0x4a6f9a, baju: 0x14202e }
+  };
+  const BAJU_ACAK = [0x4a3b32, 0x3b4a3f, 0x4a4a4a, 0x5a3030];
+  const matKulitCache = {};
+  const matKulit = hex => matKulitCache[hex] || (matKulitCache[hex] = new THREE.MeshLambertMaterial({ color: hex }));
+  const bCelanaZ = new THREE.MeshLambertMaterial({ color: 0x2f3438 });
+  const bMataZ = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
+  const bHelmT = new THREE.MeshLambertMaterial({ color: 0x2f3b27 });
+  const bGelapZ = new THREE.MeshLambertMaterial({ color: 0x1f1f1f });
+  const bEmasZ = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+  const pv = { x: 0, z: 0 }, pPrev = { x: 0, z: 0 };
+  const jumlahTipe = { cepat: 0, tebal: 0, tentara: 0, tank: 0, raksasa: 0, boss: 0, titan: 0, kolosus: 0, biasa: 0 };
+  const peluruMusuh = [];
+  const zombies = [];
+
+  function buatZombie(tipe) {
+    const g = new THREE.Group(), pose = new THREE.Group();
+    g.add(pose);
+    const w = WARNA_Z[tipe] || WARNA_Z.biasa;
+    const bKulit = matKulit(w.kulit);
+    const bBaju = new THREE.MeshLambertMaterial({ color: w.baju || BAJU_ACAK[Math.floor(Math.random() * BAJU_ACAK.length)] });
+    pose.add(kotak(0.9, 1.1, 0.5, bBaju, 0, 1.6, 0));
+    pose.add(kotak(0.6, 0.6, 0.6, bKulit, 0, 2.5, 0));
+    pose.add(kotak(0.13, 0.09, 0.05, bMataZ, -0.15, 2.55, 0.31), kotak(0.13, 0.09, 0.05, bMataZ, 0.15, 2.55, 0.31));
+    const kakiKiri = new THREE.Group(), kakiKanan = new THREE.Group();
+    kakiKiri.add(kotak(0.35, 1.0, 0.4, bCelanaZ, 0, -0.5, 0));
+    kakiKanan.add(kotak(0.35, 1.0, 0.4, bCelanaZ, 0, -0.5, 0));
+    kakiKiri.position.set(-0.22, 1.05, 0); kakiKanan.position.set(0.22, 1.05, 0);
+    const lenganK = new THREE.Group(), lenganR = new THREE.Group();
+    lenganK.add(kotak(0.25, 0.85, 0.25, bKulit, 0, -0.4, 0));
+    lenganR.add(kotak(0.25, 0.85, 0.25, bKulit, 0, -0.4, 0));
+    lenganK.position.set(-0.6, 2.05, 0); lenganR.position.set(0.6, 2.05, 0);
+    const lengan = tipe === "tentara" ? -1.2 : -1.45;
+    lenganK.rotation.x = lengan; lenganR.rotation.x = lengan;
+    pose.add(kakiKiri, kakiKanan, lenganK, lenganR);
+    let muzzle = null;
+    if (tipe === "tentara") {
+      pose.add(kotak(0.7, 0.3, 0.7, bHelmT, 0, 2.85, 0));
+      const senapan = new THREE.Group();
+      senapan.add(kotak(0.1, 0.16, 0.85, bGelapZ, 0, 0, 0.2), kotak(0.08, 0.28, 0.12, bGelapZ, 0, -0.2, 0.1));
+      muzzle = new THREE.Object3D(); muzzle.position.set(0, 0.03, 0.65);
+      senapan.add(muzzle);
+      senapan.position.set(0.1, 1.7, 0.6);
+      pose.add(senapan);
+    }
+    if (tipe === "boss") pose.add(kotak(0.8, 0.25, 0.8, bEmasZ, 0, 2.95, 0));
+    let bBajuAkhir = bBaju;
+    if (TIPE_Z[tipe] && TIPE_Z[tipe].mega) {        // zombie mega tetap terlihat menembus kabut
+      const peta = new Map();
+      g.traverse(o => {
+        if (!o.isMesh) return;
+        let m = peta.get(o.material);
+        if (!m) { m = o.material.clone(); m.fog = false; peta.set(o.material, m); }
+        o.material = m;
+      });
+      bBajuAkhir = peta.get(bBaju) || bBaju;
+    }
+    return { g, pose, kakiKiri, kakiKanan, lenganK, lenganR, bBaju: bBajuAkhir, muzzle };
+  }
+  const geoBar = new THREE.BoxGeometry(2, 0.2, 0.05);
+  const matBarBg = new THREE.MeshBasicMaterial({ color: 0x111111 }), matBarFg = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+  function buatBar(lebar) {
+    const g = new THREE.Group();
+    const bg = new THREE.Mesh(geoBar, matBarBg), fg = new THREE.Mesh(geoBar, matBarFg);
+    fg.position.z = 0.03;
+    g.add(bg, fg);
+    g.scale.setScalar(lebar);
+    scene.add(g);
+    return { g, fg };
+  }
+  function buatTankZombie() {
+    const bBaju = new THREE.MeshLambertMaterial({ color: 0x3f5a2e });
+    const g = rakitTank(bBaju, new THREE.MeshLambertMaterial({ color: 0x1b1d20 }));
+    g.add(kotak(0.4, 0.3, 0.1, bMataZ, -0.8, 1.2, 2.85), kotak(0.4, 0.3, 0.1, bMataZ, 0.8, 1.2, 2.85));
+    return { g, bBaju, turret: g.userData.turret, barrel: g.userData.barrel, tip: g.userData.tip };
+  }
+
+  function hpTipe(t) {
+    switch (t) {
+      case "biasa": return 100 + 15 * (hari - 1);
+      case "cepat": return 60 + 8 * (hari - 1);
+      case "tebal": return 400 + 50 * (hari - 1);
+      case "tentara": return 150 + 20 * (hari - 1);
+      case "tank": return 1500 + 100 * Math.max(0, hari - GEL_TANK);
+      case "raksasa": return 2500 + 150 * Math.max(0, hari - GEL_RAKSASA);
+      case "titan": return 15000 + 1000 * Math.max(0, hari - GEL_TITAN);
+      case "kolosus": return 25000 + 1500 * Math.max(0, hari - GEL_BOSS);
+      default: return 40000 + 4000 * Math.max(0, Math.floor(hari / GEL_BOSS) - 1);
+    }
+  }
+  function pilihTipeZombie() {
+    // kolosus (150x): acak kapan saja, tapi hanya setelah boss pertama dikalahkan dan sudah ganti hari
+    if (bossKalah && hari > bossKalah && jumlahTipe.kolosus < 1 && Math.random() < 0.012) return "kolosus";
+    if (hari >= GEL_TITAN && jumlahTipe.titan < 1 && Math.random() < Math.min(0.05, 0.01 + 0.003 * (hari - GEL_TITAN))) return "titan";
+    if (hari >= GEL_RAKSASA && jumlahTipe.raksasa < 2 && Math.random() < Math.min(0.12, 0.04 + 0.01 * (hari - GEL_RAKSASA))) return "raksasa";
+    if (hari >= GEL_TANK && jumlahTipe.tank < 3 && Math.random() < Math.min(0.18, 0.04 + 0.015 * (hari - GEL_TANK))) return "tank";
+    if (hari >= GEL_TENTARA && jumlahTipe.tentara < 8 && Math.random() < Math.min(0.25, 0.10 + 0.02 * (hari - GEL_TENTARA))) return "tentara";
+    if (hari >= GEL_TEBAL && Math.random() < Math.min(0.25, 0.12 + 0.02 * (hari - GEL_TEBAL))) return "tebal";
+    if (hari >= GEL_CEPAT && Math.random() < Math.min(0.35, 0.15 + 0.03 * (hari - GEL_CEPAT))) return "cepat";
+    return "biasa";
+  }
+  function kecepatanTipe(t) {
+    if (TIPE_Z[t].mega) return 0.1 * TIPE_Z[t].skala;
+    switch (t) {
+      case "cepat": return 6.5 + Math.random() * 1.5;
+      case "tebal": return 1.8 + Math.random() * 0.7;
+      case "tentara": return 3.0 + Math.random();
+      case "tank": return 3.5;
+      case "raksasa": return 3.4;
+      case "boss": return 3.8;
+      default: return 2.4 + Math.random() * 1.4 + Math.min(1, 0.1 * hari);
+    }
+  }
+  // area kena tembak: beberapa bola yang mengikuti bentuk badan (kaki, badan, kepala)
+  function buatHs(tipe, k) {
+    if (tipe === "tank") return null;
+    if (TIPE_Z[tipe].mega) return { ys: [0.3 * k, 0.8 * k, 1.6 * k, 2.55 * k], rs: [0.45 * k, 0.5 * k, 0.62 * k, 0.45 * k], cy: 1.4 * k, r: 1.6 * k };
+    return { ys: [0.8 * k, 1.6 * k, 2.4 * k], rs: [0.75 * k, 0.75 * k, 0.75 * k], cy: 1.5 * k, r: 1.5 * k };
+  }
+  function bikinZombie(tipe) {
+    tipe = tipe || pilihTipeZombie();
+    const T = TIPE_Z[tipe], jauh = tipe === "tank";
+    const sudut = Math.random() * 6.283, r = T.mega ? 120 + T.skala * 3 : (jauh ? 75 : 45) + Math.random() * (jauh ? 50 : 65);
+    const x = p.x + Math.cos(sudut) * r, z = p.z + Math.sin(sudut) * r;
+    const c = tipe === "tank" ? buatTankZombie() : buatZombie(tipe);
+    if (tipe !== "tank") c.g.scale.setScalar(T.skala * (tipe === "biasa" ? 0.92 + Math.random() * 0.2 : 1));
+    const hp = hpTipe(tipe);
+    const zb = {
+      tipe, c, x, z, y: tinggiDi(x, z), hp, hpMax: hp, hadap: Math.random() * 6.28, kec: kecepatanTipe(tipe),
+      wx: x, wz: z, tunggu: Math.random() * 2, cd: 0.5, fz: Math.random() * 6, r: T.r, cy: T.cy,
+      tabrakT: 0, cdTembak: 2 + Math.random() * 2, burst: 0, cdBurst: 0, bar: null,
+      hs: buatHs(tipe, c.g.scale.x),
+      mati: false, matiT: 0, hitT: 0, hapus: false
+    };
+    if (T.bar) zb.bar = buatBar(tipe === "tank" ? 2.4 : T.mega ? 1.2 * T.skala : 3.2);
+    if (!T.mega) dorongKeluar(zb, tipe === "tank" ? 3 : 0.5);
+    scene.add(c.g);
+    zombies.push(zb);
+    jumlahTipe[tipe]++;
+    return tipe;
+  }
+  function bersihkanZombie() {
+    zombies.forEach(z => { scene.remove(z.c.g); if (z.bar) scene.remove(z.bar.g); });
+    zombies.length = 0;
+    peluruMusuh.forEach(b => scene.remove(b.m)); peluruMusuh.length = 0;
+    efek.forEach(e => scene.remove(e.m)); efek.length = 0;
+    antrean = 0;
+    for (const k in jumlahTipe) jumlahTipe[k] = 0;
+  }
+  function lukaiZombie(z, dmg) {
+    if (z.mati) return;
+    // ⭐ ONE-HIT-KILL
+if(window.oneHitKill) dmg = 999999;
+    z.hp -= dmg;
+    z.c.bBaju.emissive.setHex(0xff2200); z.hitT = 0.1;
+    const ch = $("crosshair"); ch.classList.add("kena");
+    setTimeout(() => ch.classList.remove("kena"), 130);
+    if (z.hp <= 0) {
+      z.mati = true; z.matiT = 0; kills++; coin += TIPE_Z[z.tipe].coin;
+      if (z.tipe === "boss" && !bossKalah) bossKalah = hari;
+      aturStat();
+      if (z.bar) { scene.remove(z.bar.g); z.bar = null; }
+      if (z.tipe === "tank") { efekLedak(z.x, z.y + 1.5, z.z); z.c.bBaju.color.setHex(0x1a1a1a); }
+    }
+  }
+  function lihatLos(ax, ay, az, bx, by, bz) {
+    for (let i = 1; i < 8; i++) {
+      const t = i / 8;
+      if (tinggiDi(ax + (bx - ax) * t, az + (bz - az) * t) > ay + (by - ay) * t) return false;
+    }
+    return true;
+  }
+
+  // ---- tembakan musuh ----
+  const matMusuhB = new THREE.MeshBasicMaterial({ color: 0xff4040 });
+  const matMusuhS = new THREE.MeshBasicMaterial({ color: 0xc026d3 });
+  function spawnMusuh(posisi, dir, kec, dmg, shell, rad, ukuran) {
+    const m = new THREE.Mesh(shell ? geoShell : geoPeluru, shell ? matMusuhS : matMusuhB);
+    m.position.copy(posisi);
+    if (ukuran) m.scale.setScalar(ukuran);
+    if (!shell) m.lookAt(new THREE.Vector3().copy(posisi).add(dir));
+    scene.add(m);
+    peluruMusuh.push({ m, vx: dir.x * kec, vy: dir.y * kec, vz: dir.z * kec, life: shell ? (rad > 10 ? 9 : 3.5) : 2, dmg, s: shell, rad: rad || 6.5 });
+  }
+  function tembakTentara(z, d) {
+    z.c.g.updateMatrixWorld(true);
+    const mp = new THREE.Vector3();
+    z.c.muzzle.getWorldPosition(mp);
+    const wkt = d / 55;
+    let dx = p.x + pv.x * wkt * 0.5 - mp.x, dy = p.y + 1.2 - mp.y, dz = p.z + pv.z * wkt * 0.5 - mp.z;
+    const l = Math.hypot(dx, dy, dz) || 1;
+    const err = 0.03 + d * 0.0012;
+    dx = dx / l + (Math.random() - 0.5) * 2 * err; dy = dy / l + (Math.random() - 0.5) * 2 * err; dz = dz / l + (Math.random() - 0.5) * 2 * err;
+    spawnMusuh(mp, new THREE.Vector3(dx, dy, dz).normalize(), 55, 6, false);
+  }
+  function tembakShellMusuh(z, d) {
+    const mp = new THREE.Vector3();
+    if (z.tipe === "tank") { z.c.g.updateMatrixWorld(true); z.c.tip.getWorldPosition(mp); }
+    else mp.set(z.x + Math.sin(z.hadap) * 2.5, z.y + 4.2, z.z + Math.cos(z.hadap) * 2.5);
+    const wkt = d / 60;
+    const tx = p.x + pv.x * wkt * 0.7 + (Math.random() - 0.5) * d * 0.06, ty = p.y + 1.2, tz = p.z + pv.z * wkt * 0.7 + (Math.random() - 0.5) * d * 0.06;
+    spawnMusuh(mp, new THREE.Vector3(tx - mp.x, ty - mp.y, tz - mp.z).normalize(), 60, z.tipe === "boss" ? 40 : 30, true);
+  }
+  function tembakBatuMega(z, d) {
+    const S = TIPE_Z[z.tipe].skala;
+    const mp = new THREE.Vector3(z.x + Math.sin(z.hadap) * 0.3 * S, z.y + 2.2 * S, z.z + Math.cos(z.hadap) * 0.3 * S);
+    const wkt = d / 140;
+    const tx = p.x + pv.x * wkt * 0.8, ty = p.y + 1.2, tz = p.z + pv.z * wkt * 0.8;
+    spawnMusuh(mp, new THREE.Vector3(tx - mp.x, ty - mp.y, tz - mp.z).normalize(), 140, 45, true, 40, 6);
+  }
+  function ledakanMusuh(x, y, z, dmg, rad) {
+    rad = rad || 6.5;
+    efekLedak(x, y, z, rad / 6.5);
+    if (status !== "tempur") return;
+    const d = Math.hypot(p.x - x, p.y + 1.2 - y, p.z - z);
+    if (d < rad) lukaiPemain(Math.round(dmg * (1 - 0.6 * d / rad)));
+  }
+  function updatePeluruMusuh(dt) {
+    for (let i = peluruMusuh.length - 1; i >= 0; i--) {
+      const b = peluruMusuh[i], m = b.m;
+      const ax = m.position.x, ay = m.position.y, az = m.position.z;
+      const bx = ax + b.vx * dt, by = ay + b.vy * dt, bz = az + b.vz * dt;
+      b.life -= dt;
+      let hapus = b.life <= 0, kena = !hapus && by < tinggiDi(bx, bz);
+      if (!hapus && !kena) {
+        for (const o of rintanganDekat(bx, bz)) {
+          if (Math.abs(o.x - bx) > 8 || Math.abs(o.z - bz) > 8) continue;
+          if (jarakSeg2D(ax, az, bx, bz, o.x, o.z) < o.r && by < tinggiDi(o.x, o.z) + o.h) { kena = true; break; }
+        }
+      }
+      if (!hapus && !kena && status === "tempur") {
+        const rad = mobil ? (mobil.tipe === "tank" ? 2.6 : 2.0) : 0.9;
+        if (jarakSeg3D(ax, ay, az, bx, by, bz, p.x, p.y + (mobil ? 1.4 : 1.2), p.z) < rad) {
+          kena = true;
+          if (!b.s) lukaiPemain(b.dmg);
+        }
+      }
+      if (kena) { hapus = true; if (b.s) ledakanMusuh(bx, by, bz, b.dmg, b.rad); }
+      if (hapus) { scene.remove(m); peluruMusuh.splice(i, 1); } else m.position.set(bx, by, bz);
+    }
+  }
+
+  // ---- perilaku zombie ----
+  function updateZombie(z, dt) {
+    const c = z.c, T = TIPE_Z[z.tipe], tipe = z.tipe, tank = tipe === "tank", mega = !!T.mega;
+    if (z.hitT > 0) { z.hitT -= dt; if (z.hitT <= 0) c.bBaju.emissive.setHex(0); }
+    if (z.tabrakT > 0) z.tabrakT -= dt;
+    if (z.mati) {
+      z.matiT += dt;
+      if (!tank) c.pose.rotation.x = -Math.min(1.5, z.matiT * 4);
+      if (z.matiT > (tank || mega ? 6 : 3)) { scene.remove(c.g); z.hapus = true; }
+      return;
+    }
+    c.g.visible = mega || Math.hypot(z.x - camera.position.x, z.z - camera.position.z) < (T.bar ? 260 : 170);
+    const aktif = status === "tempur";
+    let dx = p.x - z.x, dz = p.z - z.z, d = Math.hypot(dx, dz) || 0.001;
+    if (aktif && !mega && d > 230) {              // terlalu jauh: pindahkan ke dekat pemain (dunia tak terbatas)
+      const a = Math.random() * 6.283, r = 70 + Math.random() * 50;
+      z.x = p.x + Math.cos(a) * r; z.z = p.z + Math.sin(a) * r; z.wx = z.x; z.wz = z.z;
+      dx = p.x - z.x; dz = p.z - z.z; d = Math.hypot(dx, dz) || 0.001;
+    }
+    const kejar = aktif && (mega || d < (tank ? 160 : 110) || (faseHari === "malam" && faseT > 20));
+    let mx = 0, mz = 0, kec = 0, target = z.hadap;
+    const berhenti = tank ? 45 : tipe === "tentara" ? 26 : mega ? 0.3 * T.skala : 0;
+    if (kejar) {
+      target = Math.atan2(dx, dz);
+      if (d > berhenti) { mx = dx / d; mz = dz / d; kec = z.kec; }
+      else if (tipe === "tentara" && d < 14) { mx = -dx / d; mz = -dz / d; kec = z.kec * 0.6; }
+    } else if (z.tunggu > 0) z.tunggu -= dt;
+    else {
+      const wx = z.wx - z.x, wz = z.wz - z.z, dd = Math.hypot(wx, wz);
+      if (dd < 2) { z.tunggu = 1 + Math.random() * 3; z.wx = z.x + (Math.random() - 0.5) * 60; z.wz = z.z + (Math.random() - 0.5) * 60; }
+      else { mx = wx / dd; mz = wz / dd; kec = 1.4; target = Math.atan2(wx, wz); }
+    }
+    z.hadap += selisihSudut(z.hadap, target) * Math.min(1, dt * (tank ? 1.2 : mega ? 1.5 : 6));
+    z.x += mx * kec * dt; z.z += mz * kec * dt;
+    if (!mega) dorongKeluar(z, tank ? 3 : tipe === "raksasa" ? 1.8 : tipe === "tebal" ? 1.0 : 0.5);
+    z.y = tinggiDi(z.x, z.z);
+    c.g.position.set(z.x, z.y, z.z);
+    c.g.rotation.y = z.hadap;
+    if (z.bar) {
+      z.bar.g.visible = c.g.visible;
+      z.bar.g.position.set(z.x, z.y + T.bar, z.z);
+      z.bar.g.lookAt(camera.position);
+      const rasio = Math.max(0.001, z.hp / z.hpMax);
+      z.bar.fg.scale.x = rasio; z.bar.fg.position.x = -(1 - rasio);
+    }
+
+    if (tank) {
+      c.turret.rotation.y = kejar ? selisihSudut(z.hadap, Math.atan2(dx, dz)) : 0;
+      c.barrel.rotation.x = -klem(d * 0.004, 0, 0.35);
+    } else {
+      const t = performance.now() / 1000;
+      const ayun = kec > 0.1 ? Math.sin(t * (mega ? kec / T.skala * 12.6 : kec * (tipe === "cepat" ? 1.6 : 2.6)) + z.fz) * 0.7 : 0;
+      c.kakiKiri.rotation.x = ayun; c.kakiKanan.rotation.x = -ayun;
+      if (tipe !== "tentara") {
+        const ta = mega ? 0.5 : 3;
+        c.lenganK.rotation.x = -1.45 + Math.sin(t * ta + z.fz) * 0.12;
+        c.lenganR.rotation.x = -1.45 - Math.sin(t * ta + z.fz) * 0.12;
+      }
+    }
+
+    // serangan jarak jauh
+    if (tipe === "tentara" && kejar && d < 70 && d > 5) {
+      z.cdTembak -= dt;
+      if (z.burst > 0) {
+        z.cdBurst -= dt;
+        if (z.cdBurst <= 0) { tembakTentara(z, d); z.burst--; z.cdBurst = 0.14; }
+      } else if (z.cdTembak <= 0) {
+        if (lihatLos(z.x, z.y + 1.6, z.z, p.x, p.y + 1.4, p.z)) { z.burst = 3; z.cdBurst = 0; z.cdTembak = 1.4 + Math.random() * 1.4; }
+        else z.cdTembak = 0.5;
+      }
+    }
+    if (tank && kejar && d < 115 && d > 10) {
+      z.cdTembak -= dt;
+      if (z.cdTembak <= 0) {
+        if (lihatLos(z.x, z.y + 2.5, z.z, p.x, p.y + 1.4, p.z)) { tembakShellMusuh(z, d); z.cdTembak = 2.8 + Math.random() * 1.4; }
+        else z.cdTembak = 0.5;
+      }
+    }
+    if (mega && kejar && d > T.jangkau && d < 1100) {          // zombie mega melempar batu raksasa
+      z.cdTembak -= dt;
+      if (z.cdTembak <= 0) { tembakBatuMega(z, d); z.cdTembak = 3.5 + Math.random() * 2; }
+    }
+    // serangan jarak dekat (tidak mempan kalau kamu di dalam kendaraan atau jauh di atas, mis. di menara)
+    const bisaMelee = mega ? (d < T.jangkau && p.y - z.y < 0.3 * T.skala)      // injakan: kena yang ada di dekat kakinya
+                           : (T.jangkau && !mobil && d < T.jangkau && Math.abs(z.y - p.y) < 3);
+    if (kejar && bisaMelee) {
+      z.cd -= dt;
+      if (z.cd <= 0) { lukaiPemain(T.dmg); z.cd = T.jeda; }
+    } else if (z.cd < 0.4) z.cd = 0.4;
+  }
+  function pisahkanZombie() {
+    const n = zombies.length;
+    for (let i = 0; i < n; i++) {
+      const a = zombies[i]; if (a.mati || a.r > 1.4) continue;
+      for (let j = i + 1; j < n; j++) {
+        const b = zombies[j]; if (b.mati || b.r > 1.4) continue;
+        const dx = b.x - a.x, dz = b.z - a.z;
+        if (Math.abs(dx) > 0.9 || Math.abs(dz) > 0.9) continue;
+        const d = Math.hypot(dx, dz);
+        if (d < 0.9 && d > 0.001) { const m = (0.9 - d) / 2; a.x -= dx / d * m; a.z -= dz / d * m; b.x += dx / d * m; b.z += dz / d * m; }
+      }
+    }
+  }
+
+  // ================= Peluru, ledakan =================
+  const geoPeluru = new THREE.BoxGeometry(0.07, 0.07, 1.3);
+  const geoShell = new THREE.SphereGeometry(0.3, 6, 6);
+  const geoLedak = new THREE.SphereGeometry(1, 10, 8);
+  const matP = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+  const matK = new THREE.MeshBasicMaterial({ color: 0xff8a3d });
+  function spawnPeluru(posisi, dir, kec, dmg, tipe) {
+    const m = new THREE.Mesh(tipe === "s" ? geoShell : geoPeluru, tipe === "p" ? matP : matK);
+    m.position.copy(posisi);
+    if (tipe !== "s") m.lookAt(new THREE.Vector3().copy(posisi).add(dir));
+    scene.add(m);
+    peluru.push({ m, vx: dir.x * kec, vy: dir.y * kec, vz: dir.z * kec, life: tipe === "s" ? 3 : tipe === "k" ? 3.5 : 2, dmg, s: tipe === "s" });
+  }
+  function efekLedak(x, y, z, k) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffa23a, transparent: true, opacity: 0.8 });
+    const m = new THREE.Mesh(geoLedak, mat);
+    m.position.set(x, y, z);
+    scene.add(m);
+    efek.push({ m, mat, t: 0, k: k || 1 });
+  }
+  function ledakan(x, y, z, radius, dmg) {
+    for (const zb of zombies) {
+      if (zb.mati) continue;
+      const d = Math.hypot(zb.x - x, zb.y + zb.cy - y, zb.z - z) - (zb.r - 1);
+      if (d < radius) lukaiZombie(zb, Math.round(dmg * (1 - 0.6 * Math.max(0, d) / radius)));
+    }
+    efekLedak(x, y, z);
+  }
+  function updateEfek(dt) {
+    for (let i = efek.length - 1; i >= 0; i--) {
+      const e = efek[i];
+      e.t += dt;
+      e.m.scale.setScalar((1 + e.t * 18) * e.k);
+      e.mat.opacity = Math.max(0, 0.8 * (1 - e.t / 0.4));
+      if (e.t > 0.4) { scene.remove(e.m); efek.splice(i, 1); }
+    }
+  }
+  function kenaZombie(z, ax, ay, az, bx, by, bz) {
+    if (!z.hs) return jarakSeg3D(ax, ay, az, bx, by, bz, z.x, z.y + z.cy, z.z) < z.r;
+    for (let i = 0; i < z.hs.ys.length; i++) if (jarakSeg3D(ax, ay, az, bx, by, bz, z.x, z.y + z.hs.ys[i], z.z) < z.hs.rs[i]) return true;
+    return false;
+  }
+  function updatePeluru(dt) {
+    for (let i = peluru.length - 1; i >= 0; i--) {
+      const b = peluru[i], m = b.m;
+      const ax = m.position.x, ay = m.position.y, az = m.position.z;
+      const bx = ax + b.vx * dt, by = ay + b.vy * dt, bz = az + b.vz * dt;
+      b.life -= dt;
+      let hapus = b.life <= 0;
+      let kena = !hapus && by < tinggiDi(bx, bz);
+      if (!hapus && !kena) {
+        for (const o of rintanganDekat(bx, bz)) {
+          if (Math.abs(o.x - bx) > 8 || Math.abs(o.z - bz) > 8) continue;
+          if (jarakSeg2D(ax, az, bx, bz, o.x, o.z) < o.r && by < tinggiDi(o.x, o.z) + o.h) { kena = true; break; }
+        }
+      }
+      if (!hapus && !kena) {
+        for (const z of zombies) {
+          if (z.mati) continue;
+          if (kenaZombie(z, ax, ay, az, bx, by, bz)) { if (!b.s) lukaiZombie(z, b.dmg); kena = true; break; }
+        }
+      }
+      if (kena) { hapus = true; if (b.s) ledakan(bx, by, bz, 7, b.dmg); }
+      if (hapus) { scene.remove(m); peluru.splice(i, 1); } else m.position.set(bx, by, bz);
+    }
+  }
+  function bersihkanPeluru() { peluru.forEach(b => scene.remove(b.m)); peluru.length = 0; }
+
+  // ================= HP, damage, HUD =================
+  function aturHp() {
+    $("hpBar").style.width = p.hp + "%";
+    $("hpBar").style.background = p.hp > 50 ? "#22c55e" : p.hp > 25 ? "#eab308" : "#ef4444";
+  }
+  function lukaiPemain(dmg) {
+    if (status !== "tempur") return;
+    // ⭐ INVINCIBLE MODE
+if(window.pemainInvincible) return;
+    if (mobil) { lukaiKendaraan(dmg); return; }
+    p.hp = Math.max(0, p.hp - dmg);
+    aturHp();
+    $("darah").style.opacity = 0.9;
+    setTimeout(() => { $("darah").style.opacity = 0; }, 120);
+    if (p.hp <= 0) akhiri();
+  }
+  function lukaiKendaraan(dmg) {
+    const k = mobil, kd = gudang.kend[k.tipe];
+    kd.hp = Math.max(0, kd.hp - dmg);
+    $("darah").style.opacity = 0.6;
+    setTimeout(() => { $("darah").style.opacity = 0; }, 120);
+    if (kd.hp <= 0) ledakKendaraan(k);
+  }
+  function ledakKendaraan(k) {
+    const id = k.tipe, didalam = mobil === k;
+    toast("💥 " + KEND[id].nama + " meledak!");
+    ledakan(k.x, k.y + 1, k.z, 12, 350);
+    k.penumpang = [];
+    scene.remove(k.g);
+    gudang.kend[id] = kendBaru(id);
+    if (didalam) {
+      mobil = null; dekatMobil = null;
+      p.x = k.x; p.z = k.z; p.y = Math.max(k.y + 1, tinggiDi(k.x, k.z)); p.vy = 0; p.diTanah = false;
+      kam.pitch = 0.2;
+      terapkanScope(); aturUI(); aturInfo();
+      lukaiPemain(25);
+    }
+  }
+  const ARAH = ["U", "TL", "T", "TG", "S", "BD", "B", "BL"];
+  function aturKoordinat() {
+    const bearing = ((-kam.yaw) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const t = "📍 X " + Math.round(p.x) + " · Z " + Math.round(p.z) + " · Y " + Math.round(p.y) + " · ↑" + ARAH[Math.round(bearing / (Math.PI / 4)) % 8];
+    if ($("koordinat").textContent !== t) $("koordinat").textContent = t;
+  }
+  function aturStat() { $("coin").textContent = fmt(coin); $("kill").textContent = kills; }
+  function aturInfo() {
+    let t;
+    if (mobil) {
+      const kd = gudang.kend[mobil.tipe], c = KEND[mobil.tipe];
+      t = c.ikon + " ❤ " + Math.round(kd.hp) + "/" + c.hp + " ⛽ " + (kd.unBensin ? "∞" : Math.round(kd.bensin) + "%");
+      if (c.senjata) t += " · 🔫 " + (kd.unPeluru ? "∞" : fmt(kd.peluru));
+    } else {
+      const inv = gudang.senjata[senjataAktif];
+      t = SENJATA[senjataAktif].nama + " · " + (inv.un ? "∞" : fmt(inv.ammo));
+    }
+    if ($("info").textContent !== t) $("info").textContent = t;
+  }
+
+  // ================= Medkit (+20 darah) =================
+  const HEAL = 20;
+  const bPutih = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
+  const bPalang = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+  const bCahaya = new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0.28, depthWrite: false });
+  const geoCahaya = new THREE.CylinderGeometry(0.5, 0.5, 9, 8);
+  function buatMedkit() {
+    const g = new THREE.Group(), badan = new THREE.Group();
+    badan.add(kotak(1.0, 0.7, 0.7, bPutih, 0, 0, 0));
+    badan.add(kotak(0.55, 0.05, 0.16, bPalang, 0, 0.37, 0));
+    badan.add(kotak(0.16, 0.05, 0.55, bPalang, 0, 0.37, 0));
+    badan.add(kotak(0.55, 0.16, 0.05, bPalang, 0, 0, 0.37));
+    g.add(badan);
+    const cahaya = new THREE.Mesh(geoCahaya, bCahaya);
+    cahaya.position.y = 4;
+    g.add(cahaya);
+    scene.add(g);
+    return { g, badan, x: 0, z: 0, ambil: false, key: "" };
+  }
+  function pasangMedkit(ch) {
+    const mp = ch.medkitPos, m = buatMedkit();
+    m.x = mp.x; m.z = mp.z; m.key = ch.key;
+    m.g.position.set(mp.x, tinggiDi(mp.x, mp.z), mp.z);
+    ch.medkit = m; medkits.push(m);
+  }
+  function acakMedkit() {                       // dipanggil tiap pagi: semua medkit muncul lagi
+    medkitAmbil.clear();
+    medkits.forEach(m => { m.ambil = false; m.g.visible = true; });
+    for (const ch of chunks.values()) if (ch.medkitPos && !ch.medkit) pasangMedkit(ch);
+  }
+  let toastPenuh = 0;
+  function updateLain(dt) {
+    const t = performance.now() / 1000;
+    medkits.forEach((m, i) => {
+      if (m.ambil) return;
+      m.badan.position.y = 1.1 + Math.sin(t * 2 + i) * 0.2;
+      m.badan.rotation.y += dt * 1.5;
+    });
+    for (const id in gudang.kend) {
+      const o = gudang.kend[id].obj;
+      if (!o || id !== "heli" || o === mobil || o.rot < 0.1) continue;
+      o.rot -= o.rot * dt * 0.8;
+      o.g.userData.rotor.rotation.y += o.rot * dt;
+    }
+    if (status === "tempur" && p.y - tinggiDi(p.x, p.z) < 4) {
+      for (const m of medkits) {
+        if (m.ambil || Math.hypot(m.x - p.x, m.z - p.z) > 2.4) continue;
+        if (p.hp >= 100) {
+          if (t - toastPenuh > 2) { toast("Darah sudah penuh"); toastPenuh = t; }
+          continue;
+        }
+        m.ambil = true; m.g.visible = false; medkitAmbil.add(m.key);
+        p.hp = Math.min(100, p.hp + HEAL);
+        aturHp();
+        toast("+" + HEAL + " darah 🩹");
+      }
+    }
+  }
+
+  // ================= Kendaraan: model =================
+  const bBadanMobil = new THREE.MeshLambertMaterial({ color: 0xd97706 });
+  const bKacaMobil = new THREE.MeshLambertMaterial({ color: 0x1e3a5f });
+  const bBanMobil = new THREE.MeshLambertMaterial({ color: 0x111111 });
+  const bLampuMobil = new THREE.MeshBasicMaterial({ color: 0xfff2a8 });
+  const geoBan = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 10);
+  function buatMobil() {
+    const g = new THREE.Group();
+    g.rotation.order = "YXZ";
+    g.add(kotak(2.4, 0.8, 4.6, bBadanMobil, 0, 0.9, 0));
+    g.add(kotak(2.0, 0.8, 2.0, bKacaMobil, 0, 1.7, -0.3));
+    g.add(kotak(2.1, 0.15, 2.1, bBadanMobil, 0, 2.15, -0.3));
+    [[-1.25, 0.5, 1.5], [1.25, 0.5, 1.5], [-1.25, 0.5, -1.5], [1.25, 0.5, -1.5]].forEach(([x, y, z]) => {
+      const w = new THREE.Mesh(geoBan, bBanMobil);
+      w.rotation.z = Math.PI / 2; w.position.set(x, y, z); g.add(w);
+    });
+    g.add(kotak(0.45, 0.25, 0.1, bLampuMobil, -0.8, 1.0, 2.32), kotak(0.45, 0.25, 0.1, bLampuMobil, 0.8, 1.0, 2.32));
+    scene.add(g);
+    return g;
+  }
+  const bTank = new THREE.MeshLambertMaterial({ color: 0x4a5a3a });
+  const bTrack = new THREE.MeshLambertMaterial({ color: 0x23262b });
+  function rakitTank(bTank, bTrack) {
+    const g = new THREE.Group();
+    g.rotation.order = "YXZ";
+    g.add(kotak(3.2, 1.0, 5.6, bTank, 0, 1.0, 0));
+    g.add(kotak(0.8, 0.9, 5.9, bTrack, -1.8, 0.65, 0), kotak(0.8, 0.9, 5.9, bTrack, 1.8, 0.65, 0));
+    const turret = new THREE.Group(); turret.position.set(0, 1.9, -0.2);
+    turret.add(kotak(2.2, 0.9, 2.6, bTank, 0, 0.3, 0));
+    const barrel = new THREE.Group(); barrel.position.set(0, 0.3, 1.2);
+    barrel.add(kotak(0.3, 0.3, 3.6, bTrack, 0, 0, 1.8));
+    const tip = new THREE.Object3D(); tip.position.set(0, 0, 3.7);
+    barrel.add(tip); turret.add(barrel); g.add(turret);
+    g.userData.turret = turret; g.userData.barrel = barrel; g.userData.tip = tip;
+    return g;
+  }
+  function buatTank() { const g = rakitTank(bTank, bTrack); scene.add(g); return g; }
+  const bHeli = new THREE.MeshLambertMaterial({ color: 0x4b5d3a });
+  const bBilah = new THREE.MeshLambertMaterial({ color: 0x1f2937 });
+  function buatHeli() {
+    const g = new THREE.Group();
+    g.rotation.order = "YXZ";
+    g.add(kotak(2.2, 2.0, 4.2, bHeli, 0, 1.6, 0));
+    g.add(kotak(1.9, 1.2, 1.2, bKacaMobil, 0, 1.9, 2.0));
+    g.add(kotak(0.6, 0.6, 4, bHeli, 0, 2.0, -3.6));
+    g.add(kotak(0.15, 1.6, 0.8, bHeli, 0, 2.7, -5.4));
+    g.add(kotak(0.15, 0.15, 4, bBilah, -1.1, 0.45, 0), kotak(0.15, 0.15, 4, bBilah, 1.1, 0.45, 0));
+    [[-1.1, 1], [1.1, 1], [-1.1, -1], [1.1, -1]].forEach(([x, z]) => g.add(kotak(0.1, 0.8, 0.1, bBilah, x, 0.85, z)));
+    g.add(kotak(0.2, 0.4, 0.2, bBilah, 0, 2.8, 0));
+    const rotor = new THREE.Group(); rotor.position.set(0, 3.1, 0);
+    rotor.add(kotak(9, 0.08, 0.3, bBilah, 0, 0, 0), kotak(0.3, 0.08, 9, bBilah, 0, 0, 0));
+    g.add(rotor);
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 1.0, 3.0);
+    g.add(muzzle);
+    g.userData.rotor = rotor; g.userData.muzzle = muzzle;
+    scene.add(g);
+    return g;
+  }
+  const bJet = new THREE.MeshLambertMaterial({ color: 0x6b7280 });
+  const bJetGelap = new THREE.MeshLambertMaterial({ color: 0x374151 });
+  const bApi = new THREE.MeshBasicMaterial({ color: 0xff7a1a });
+  function buatJet() {
+    const g = new THREE.Group();
+    g.rotation.order = "YXZ";
+    g.add(kotak(1.3, 1.0, 9, bJet, 0, 1.0, 0));
+    g.add(kotak(0.9, 0.7, 2.2, bJet, 0, 1.0, 5.4));
+    g.add(kotak(9.5, 0.15, 3, bJetGelap, 0, 0.9, -0.5));
+    g.add(kotak(3.8, 0.15, 1.4, bJetGelap, 0, 1.0, -4));
+    g.add(kotak(0.15, 1.7, 1.5, bJetGelap, 0, 2.0, -3.9));
+    g.add(kotak(0.8, 0.5, 1.8, bKacaMobil, 0, 1.65, 1.6));
+    g.add(kotak(0.8, 0.6, 0.3, bApi, 0, 1.0, -4.6));
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 1.0, 6.6);
+    g.add(muzzle);
+    g.userData.muzzle = muzzle;
+    scene.add(g);
+    return g;
+  }
+  function buatObjKend(id) {
+    const g = id === "mobil" ? buatMobil() : id === "tank" ? buatTank() : id === "heli" ? buatHeli() : buatJet();
+    return { tipe: id, g, x: 0, z: 0, y: 0, hadap: 0, v: 0, vx: 0, vy: 0, vz: 0, tilt: 0, rot: 0, pitch: 0, roll: 0, sink: 0, penumpang: [], tabrakCd: 0, asapAcc: 0, asapAcc2: 0 };
+  }
+  function pasangModel(k) {
+    if (k.tipe === "mobil" || k.tipe === "tank") {
+      k.y = tinggiDi(k.x, k.z);
+      const sx = Math.sin(k.hadap), cz = Math.cos(k.hadap);
+      const hF = tinggiDi(k.x + sx * 2.5, k.z + cz * 2.5), hB = tinggiDi(k.x - sx * 2.5, k.z - cz * 2.5);
+      k.g.position.set(k.x, k.y, k.z);
+      k.g.rotation.y = k.hadap;
+      k.g.rotation.x = -Math.atan2(hF - hB, 5);
+    } else if (k.tipe === "heli") {
+      k.g.position.set(k.x, k.y, k.z);
+      k.g.rotation.y = k.hadap; k.g.rotation.x = k.tilt;
+    } else {
+      k.g.position.set(k.x, k.y, k.z);
+      k.g.rotation.y = k.hadap; k.g.rotation.x = -k.pitch; k.g.rotation.z = k.roll;
+    }
+  }
+  function tempatkanKend(k, x, z, hadap) {
+    k.x = x; k.z = z; k.hadap = hadap; k.v = 0; k.vx = k.vy = k.vz = 0; k.tilt = 0; k.pitch = 0; k.roll = 0; k.sink = 0; k.rot = 0;
+    dorongKeluar(k, k.tipe === "tank" ? 3.5 : k.tipe === "mobil" ? 2.2 : k.tipe === "heli" ? 3.5 : 4);
+    const tn = tinggiDi(k.x, k.z);
+    k.y = k.tipe === "heli" ? tn + 0.2 : k.tipe === "jet" ? tn + 0.5 : tn;
+    pasangModel(k);
+  }
+  function panggilKend(id) {
+    if (mobil) { toast("Turun dulu dari kendaraan"); return false; }
+    const kd = gudang.kend[id];
+    if (!kd.obj) kd.obj = buatObjKend(id);
+    // cari tempat kosong di sekitar pemain supaya kendaraan tidak menumpuk
+    const idx = Object.keys(KEND).indexOf(id);
+    let x = p.x, z = p.z;
+    for (let i = 0; i < 12; i++) {
+      const f = -kam.yaw + idx * 0.5 + i * 0.7, r = 8 + Math.floor(i / 8) * 4;
+      x = p.x + Math.cos(f) * r; z = p.z + Math.sin(f) * r;
+      let kosong = true;
+      for (const j in gudang.kend) {
+        const o = gudang.kend[j].obj;
+        if (o && o !== kd.obj && Math.hypot(o.x - x, o.z - z) < 8) { kosong = false; break; }
+      }
+      if (kosong) break;
+    }
+    tempatkanKend(kd.obj, x, z, Math.atan2(-Math.sin(kam.yaw), -Math.cos(kam.yaw)));
+    return true;
+  }
+
+  // ================= Kendaraan: naik/turun & fisika =================
+  function cariMobilDekat() {
+    let terbaik = null, jarakMin = 5;
+    for (const id in gudang.kend) {
+      const k = gudang.kend[id].obj;
+      if (!k) continue;
+      const d = Math.hypot(k.x - p.x, k.z - p.z);
+      if (d < jarakMin) { jarakMin = d; terbaik = k; }
+    }
+    return terbaik;
+  }
+  function aturTombolMobil() {
+    const ok = status === "tempur" && (mobil || dekatMobil);
+    $("btnNaik").style.display = ok ? "flex" : "none";
+    $("naikTeks").textContent = mobil ? "TURUN" : "NAIK";
+  }
+  function naikMobil(k) {
+    mobil = k; scope = false; input.tembak = false; input.lari = false;
+    kam.yaw = k.hadap + Math.PI;
+    kam.pitch = k.tipe === "heli" ? 0.5 : k.tipe === "jet" ? 0.2 : 0.3;
+    terapkanScope(); aturUI();
+    const info = {
+      mobil: "▲▼ = gas dan rem, ◀▶ = belok 🚗",
+      tank: "▲▼◀▶ = jalan, geser layar = bidik, 🔫 = tembak",
+      heli: "Joystick = gerak, analog kanan = naik/turun, 🔫 = tembak 🚁",
+      jet: "Joystick: kiri/kanan belok, atas/bawah gas. Analog kanan = hidung naik/turun ✈️"
+    };
+    toast(info[k.tipe]);
+  }
+  function turunMobil() {
+    const k = mobil, tn = tinggiDi(k.x, k.z);
+    if (k.tipe === "heli" && (k.y - tn > 3.5 || Math.hypot(k.vx, k.vz) > 8)) { toast("Mendaratlah dulu: turunkan ketinggian 🚁"); return; }
+    if (k.tipe === "jet" && (k.y - tn > 3 || k.v > 20)) { toast("Mendarat dulu: rendah dan pelan ✈️"); return; }
+    mobil = null;
+    k.v = 0; k.vx = k.vy = k.vz = 0; k.tilt = 0; k.pitch = 0; k.roll = 0; k.sink = 0;
+    if (k.tipe === "heli") k.y = tn + 0.2;
+    if (k.tipe === "jet") k.y = tn + 0.5;
+    pasangModel(k);
+    const jauh = k.tipe === "jet" ? 6 : 4;
+    p.x = k.x + Math.cos(k.hadap) * jauh; p.z = k.z - Math.sin(k.hadap) * jauh;
+    dorongKeluar(p, 0.5);
+    p.y = tinggiDi(p.x, p.z); p.vy = 0; p.diTanah = true; p.hadap = k.hadap;
+    kam.pitch = 0.2;
+    terapkanScope(); aturUI();
+  }
+  function bakarBensin(kd, rate, dt) {
+    if (kd.unBensin) return true;
+    kd.bensin = Math.max(0, kd.bensin - rate * dt);
+    if (kd.bensin <= 20 && !kd.warn20) { toast("Bensin menipis ⛽"); kd.warn20 = true; }
+    if (kd.bensin <= 0 && !kd.warn0) { toast("Bensin habis! ⛽"); kd.warn0 = true; }
+    return kd.bensin > 0;
+  }
+  // Cari titik yang sebenarnya ditunjuk crosshair (zombie, tanah, atau 140 m ke depan),
+  // lalu peluru diarahkan dari moncong senjata ke titik itu. Jadi tembakan selalu tepat di crosshair.
+  function titikBidik(mp) {
+    camera.getWorldDirection(vDir);
+    const ox = camera.position.x, oy = camera.position.y, oz = camera.position.z, dx = vDir.x, dy = vDir.y, dz = vDir.z;
+    const tMin = Math.max(0.3, (mp.x - ox) * dx + (mp.y - oy) * dy + (mp.z - oz) * dz);   // abaikan yang di belakang moncong
+    let tBest = 140, aim = null;
+    for (const z of zombies) {
+      if (z.mati) continue;
+      const tinggiPusat = z.hs ? z.hs.cy : z.cy, rBadan = z.hs ? z.hs.r : z.r;
+      const cx = z.x - ox, cy = z.y + tinggiPusat - oy, cz = z.z - oz;
+      const b = cx * dx + cy * dy + cz * dz;
+      if (b < tMin || b > tBest + rBadan) continue;
+      const c2 = cx * cx + cy * cy + cz * cz - b * b, rr = rBadan + 0.1;
+      if (c2 > rr * rr) continue;
+      const t = Math.max(tMin, b - Math.sqrt(Math.max(0, rr * rr - c2)));
+      if (t < tBest) { tBest = t; aim = [ox + dx * b, oy + dy * b, oz + dz * b, z.x, z.y + tinggiPusat, z.z]; }
+    }
+    for (let t = tMin; t < tBest; t += 1.5) {
+      if (oy + dy * t < tinggiDi(ox + dx * t, oz + dz * t)) { tBest = t; aim = null; break; }
+    }
+    if (aim) return vTitik.set(aim[0] + (aim[3] - aim[0]) * 0.6, aim[1] + (aim[4] - aim[1]) * 0.6, aim[2] + (aim[5] - aim[2]) * 0.6);
+    return vTitik.set(ox + dx * tBest, oy + dy * tBest, oz + dz * tBest);
+  }
+  function arahBidik(mp) {
+    const t = titikBidik(mp);
+    return new THREE.Vector3(t.x - mp.x, t.y - mp.y, t.z - mp.z).normalize();
+  }
+  function bacaGerak() {
+    let jx = input.jx, jy = input.jy;
+    if (tombolKey["KeyA"] || tombolKey["ArrowLeft"]) jx -= 1;
+    if (tombolKey["KeyD"] || tombolKey["ArrowRight"]) jx += 1;
+    if (tombolKey["KeyW"] || tombolKey["ArrowUp"]) jy -= 1;
+    if (tombolKey["KeyS"] || tombolKey["ArrowDown"]) jy += 1;
+    const kuat = Math.min(1, Math.hypot(jx, jy));
+    const mj = { x: -Math.sin(kam.yaw), z: -Math.cos(kam.yaw) };
+    const kn = { x: Math.cos(kam.yaw), z: -Math.sin(kam.yaw) };
+    let mx = kn.x * jx + mj.x * -jy, mz = kn.z * jx + mj.z * -jy;
+    const pj = Math.hypot(mx, mz);
+    if (pj > 0.01) { mx /= pj; mz /= pj; }
+    return { mx, mz, kuat, jx, jy };
+  }
+  function dorongKeluarTinggi(e, radius) {
+    for (const o of rintanganDekat(e.x, e.z)) {
+      const dx = e.x - o.x, dz = e.z - o.z, min = o.r + radius;
+      if (Math.abs(dx) > min || Math.abs(dz) > min) continue;
+      if (e.y > tinggiDi(o.x, o.z) + o.h + 1) continue;
+      const d = Math.hypot(dx, dz);
+      if (d < min && d > 0.0001) { e.x = o.x + dx / d * min; e.z = o.z + dz / d * min; }
+    }
+  }
+  function sinkronPemain(m) { p.x = m.x; p.z = m.z; p.y = m.y; p.vy = 0; p.hadap = m.hadap; }
+
+  // ---- asap kendaraan: jet tebal, mobil sedang, tank tipis, helikopter tanpa asap ----
+  const geoAsap = new THREE.SphereGeometry(1, 6, 5);
+  const POOL_ASAP = 260;
+  const asap = [];
+  for (let i = 0; i < POOL_ASAP; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff8a2b, transparent: true, opacity: 0, depthWrite: false });
+    const m = new THREE.Mesh(geoAsap, mat);
+    m.visible = false; scene.add(m);
+    asap.push({ m, mat, t: 0, hidup: 1, ukuran: 1, opa: 0, vy: 0, aktif: false });
+  }
+  let idxAsap = 0;
+  const CFG_ASAP = {
+    jet:   { rate: 55, hidup: 1.8, ukuran: 1.5, opa: 0.75, warna: 0xff8a2b, blk: [0, 1.0, -4.7] },
+    mobil: { rate: 16, hidup: 1.0, ukuran: 0.75, opa: 0.42, warna: 0xe0954a, blk: [0, 0.8, -2.5] },
+    tank:  { rate: 7,  hidup: 0.9, ukuran: 0.6, opa: 0.28, warna: 0xb8865a, blk: [0, 1.3, -3.3] }
+  };
+  function pancarAsap(x, y, z, cfg, hex) {
+    const a = asap[idxAsap]; idxAsap = (idxAsap + 1) % POOL_ASAP;
+    a.aktif = true; a.t = 0; a.hidup = cfg.hidup * (0.8 + Math.random() * 0.4); a.ukuran = cfg.ukuran; a.opa = cfg.opa;
+    a.vy = 0.6 + Math.random() * 0.6;
+    a.mat.color.setHex(hex);
+    a.m.position.set(x + (Math.random() - 0.5) * 0.5, y, z + (Math.random() - 0.5) * 0.5);
+    a.m.visible = true;
+  }
+  function updateAsap(dt) {
+    for (const a of asap) {
+      if (!a.aktif) continue;
+      a.t += dt;
+      const k = a.t / a.hidup;
+      if (k >= 1) { a.aktif = false; a.m.visible = false; continue; }
+      a.m.position.y += a.vy * dt;
+      a.m.scale.setScalar(a.ukuran * (0.6 + k * 2.6));
+      a.mat.opacity = a.opa * (1 - k) * (k < 0.1 ? k * 10 : 1);
+    }
+  }
+  function bersihkanAsap() { for (const a of asap) { a.aktif = false; a.m.visible = false; } }
+  function asapKendaraan(m, dt, bergerak) {
+    const cfg = CFG_ASAP[m.tipe];
+    if (!cfg) return;                                   // helikopter: tanpa asap
+    const kd = gudang.kend[m.tipe], sh = Math.sin(m.hadap), ch = Math.cos(m.hadap);
+    if (bergerak) m.asapAcc += cfg.rate * dt;
+    if (kd.hp / KEND[m.tipe].hp < 0.35) m.asapAcc2 += 12 * dt;       // asap hitam saat kendaraan rusak parah
+    const bx = m.x + sh * cfg.blk[2], bz = m.z + ch * cfg.blk[2], by = m.y + cfg.blk[1];
+    while (m.asapAcc >= 1) { m.asapAcc -= 1; pancarAsap(bx, by, bz, cfg, cfg.warna); }
+    while (m.asapAcc2 >= 1) { m.asapAcc2 -= 1; pancarAsap(m.x + sh * 1.2, m.y + 1.6, m.z + ch * 1.2, { hidup: 1.4, ukuran: 0.8, opa: 0.55 }, 0x222222); }
+  }
+
+  // ---- tabrakan kendaraan ----
+  function kenaBenda(m, kec, faktor) {
+    if (m.tabrakCd > 0 || kec < 2) return false;
+    m.tabrakCd = 0.6;
+    lukaiKendaraan(Math.round(Math.min(60, 6 + kec * faktor)));
+    return mobil !== m;                                // true = kendaraan meledak
+  }
+  function cekTabrakTerbang(m) {                       // kendaraan terbang yang menyambar zombie biasa
+    for (const z of zombies) {
+      if (z.mati || z.tabrakT > 0 || TIPE_Z[z.tipe].mega) continue;
+      if (Math.abs(m.y - (z.y + 1.4)) < 3 && Math.hypot(m.x - z.x, m.z - z.z) < 2.5 + z.r - 1) {
+        z.tabrakT = 0.6; lukaiZombie(z, 400);
+        lukaiKendaraan(TIPE_Z[z.tipe].tabrak);
+        if (mobil !== m) return true;
+      }
+    }
+    return false;
+  }
+  function cekTabrakMega(m, rad) {                     // menabrak badan zombie mega: darah berkurang banyak, terpental
+    for (const z of zombies) {
+      if (z.mati || !z.hs || !TIPE_Z[z.tipe].mega) continue;
+      for (let i = 0; i < z.hs.ys.length; i++) {
+        const cy = z.y + z.hs.ys[i], dx = m.x - z.x, dy = m.y + 1 - cy, dz = m.z - z.z;
+        const d = Math.hypot(dx, dy, dz), r = z.hs.rs[i] + rad;
+        if (d >= r) continue;
+        const k = (r + 1) / (d || 1);
+        m.x = z.x + dx * k; m.z = z.z + dz * k;
+        if (m.tipe === "heli" || m.tipe === "jet") m.y = cy + dy * k - 1;
+        if (z.tabrakT > 0) return false;
+        z.tabrakT = 0.8;
+        lukaiKendaraan(80);
+        m.v *= 0.4; m.vx *= 0.4; m.vz *= 0.4;
+        return mobil !== m;
+      }
+    }
+    return false;
+  }
+
+  // ---- penumpang (persiapan multiplayer): maksimal KURSI_MAKS orang per kendaraan, termasuk sopir ----
+  function jumlahPenghuni(k) { return (mobil === k ? 1 : 0) + k.penumpang.length; }
+  function naikPenumpang(k, orang) {
+    if (jumlahPenghuni(k) >= KURSI_MAKS || k.penumpang.includes(orang)) return false;
+    k.penumpang.push(orang);
+    return true;
+  }
+  function turunPenumpang(k, orang) {
+    const i = k.penumpang.indexOf(orang);
+    if (i >= 0) k.penumpang.splice(i, 1);
+  }
+  // penumpang menembak ke arah bidikannya memakai senjatanya sendiri (jadi kendaraan terbang pun bisa menyerang zombie di bawah)
+  function tembakPenumpang(k, orang, dir) {
+    const w = SENJATA[orang.senjata] || SENJATA.glock;
+    const mp = new THREE.Vector3(k.x, k.y + 1.6, k.z);
+    for (let i = 0; i < w.pelet; i++) {
+      const d = new THREE.Vector3(dir.x + (Math.random() - 0.5) * w.sebar * 2, dir.y + (Math.random() - 0.5) * w.sebar * 2, dir.z + (Math.random() - 0.5) * w.sebar * 2).normalize();
+      spawnPeluru(mp, d, 240, w.dmg, "p");
+    }
+    return w.jeda;
+  }
+
+  function jalankanDarat(dt) {
+    const m = mobil, kd = gudang.kend[m.tipe], tank = m.tipe === "tank";
+    const cfg = tank ? { acc: 8, rem: 14, vmax: 12, vmun: -4, putar: 1.1, rad: 2.8, tabrak: 4, jarakTabrak: 3.3 }
+                     : { acc: 18, rem: 28, vmax: 32, vmun: -9, putar: 1.9, rad: 1.8, tabrak: 8, jarakTabrak: 2.5 };
+    m.tabrakCd = Math.max(0, m.tabrakCd - dt);
+    let jx = (input.kanan ? 1 : 0) - (input.kiri ? 1 : 0);
+    let gas = (input.gas ? 1 : 0) - (input.rem ? 1 : 0);
+    if (tombolKey["KeyA"] || tombolKey["ArrowLeft"]) jx -= 1;
+    if (tombolKey["KeyD"] || tombolKey["ArrowRight"]) jx += 1;
+    if (tombolKey["KeyW"] || tombolKey["ArrowUp"]) gas += 1;
+    if (tombolKey["KeyS"] || tombolKey["ArrowDown"]) gas -= 1;
+    jx = klem(jx, -1, 1); gas = klem(gas, -1, 1);
+    input.lompat = false;
+    let ada = kd.unBensin || kd.bensin > 0;
+    if (ada && gas !== 0) ada = bakarBensin(kd, KEND[m.tipe].boros, dt);
+    if (!ada) gas = 0;
+    if (gas > 0.1) m.v += gas * cfg.acc * dt;
+    else if (gas < -0.1) m.v += gas * cfg.rem * dt;
+    else m.v -= m.v * Math.min(1, 1.2 * dt);
+    m.v = klem(m.v, cfg.vmun, cfg.vmax);
+    const arah = m.v >= 0 ? 1 : -1;
+    const kuatPutar = tank ? 1 : Math.min(1, Math.abs(m.v) / 6);
+    m.hadap -= jx * cfg.putar * dt * arah * kuatPutar;   // kanan = hadap berkurang
+    const bx = m.x + Math.sin(m.hadap) * m.v * dt, bz = m.z + Math.cos(m.hadap) * m.v * dt;
+    m.x = bx; m.z = bz;
+    const vTabrak = Math.abs(m.v);
+    dorongKeluar(m, cfg.rad);
+    if (Math.hypot(m.x - bx, m.z - bz) > 0.02) {
+      m.v *= 1 - Math.min(0.9, dt * 8);
+      if (kenaBenda(m, vTabrak, tank ? 0.5 : 1.0)) return;      // menabrak pohon, batu, tembok, dll merusak kendaraan
+    }
+    if (Math.abs(m.x) > BATAS || Math.abs(m.z) > BATAS) m.v *= 0.9;
+    m.x = klem(m.x, -BATAS, BATAS); m.z = klem(m.z, -BATAS, BATAS);
+    pasangModel(m);
+    p.x = m.x; p.z = m.z; p.y = m.y + 0.3; p.vy = 0; p.hadap = m.hadap;
+    if (Math.abs(m.v) > cfg.tabrak) {
+      for (const z of zombies) {
+        if (z.mati || z.tabrakT > 0 || TIPE_Z[z.tipe].mega) continue;
+        if (Math.hypot(z.x - m.x, z.z - m.z) < cfg.jarakTabrak + z.r - 1) {
+          z.tabrakT = 0.6; lukaiZombie(z, 400); m.v *= 0.93;
+          lukaiKendaraan(TIPE_Z[z.tipe].tabrak);     // menabrak zombie merusak kendaraan
+          if (mobil !== m) return;                   // kendaraan meledak
+        }
+      }
+    }
+    if (cekTabrakMega(m, 2)) return;
+    asapKendaraan(m, dt, Math.abs(m.v) > 1.5);
+    if (tank) {
+      camera.getWorldDirection(vDir);
+      const u = m.g.userData;
+      u.turret.rotation.y = selisihSudut(m.hadap, Math.atan2(vDir.x, vDir.z));
+      u.barrel.rotation.x = -Math.asin(klem(vDir.y, -0.4, 0.6));
+      pasangKamera(m.x, m.y + 3.2, m.z, 12, 0.9);
+    } else {
+      if (lookId === null) kam.yaw += selisihSudut(kam.yaw, m.hadap + Math.PI) * Math.min(1, dt * 2.5);
+      pasangKamera(m.x, m.y + 2.2, m.z, 9, 0);
+    }
+  }
+
+  function jalankanHeli(dt) {
+    const m = mobil, kd = gudang.kend.heli;
+    m.tabrakCd = Math.max(0, m.tabrakCd - dt);
+    const ada = bakarBensin(kd, KEND.heli.boros, dt);
+    const g = bacaGerak();
+    let alt = input.alt + (tombolKey["KeyR"] ? 1 : 0) - (tombolKey["KeyC"] ? 1 : 0);
+    alt = klem(alt, -1, 1);
+    let kuat = g.kuat;
+    if (!ada) { kuat = 0; alt = -0.7; }
+    input.lompat = false;
+    const vmaks = 24;
+    m.vx += (g.mx * kuat * vmaks - m.vx) * Math.min(1, dt * 1.8);
+    m.vz += (g.mz * kuat * vmaks - m.vz) * Math.min(1, dt * 1.8);
+    m.vy += (alt * 14 - m.vy) * Math.min(1, dt * 3);
+    m.x += m.vx * dt; m.z += m.vz * dt; m.y += m.vy * dt;
+    const tanah = tinggiDi(m.x, m.z);
+    if (m.y < tanah + 0.2) {
+      m.y = tanah + 0.2;
+      if (m.vy < -7) { lukaiKendaraan(Math.round(-m.vy * 4)); if (mobil !== m) return; }   // mendarat terlalu keras
+      if (m.vy < 0) m.vy = 0;
+    }
+    if (m.y > 400) { m.y = 400; if (m.vy > 0) m.vy = 0; }
+    const hx0 = m.x, hz0 = m.z;
+    dorongKeluarTinggi(m, 2.4);
+    if (Math.hypot(m.x - hx0, m.z - hz0) > 0.02) { const kk = Math.hypot(m.vx, m.vz); m.vx *= 0.3; m.vz *= 0.3; if (kenaBenda(m, kk, 1.0)) return; }
+    if (cekTabrakTerbang(m) || cekTabrakMega(m, 2.5)) return;
+    m.x = klem(m.x, -BATAS, BATAS); m.z = klem(m.z, -BATAS, BATAS);
+    const kec = Math.hypot(m.vx, m.vz);
+    if (kec > 2) m.hadap += selisihSudut(m.hadap, Math.atan2(m.vx, m.vz)) * Math.min(1, dt * 3);
+    m.tilt += (Math.min(1, kec / vmaks) * 0.35 - m.tilt) * Math.min(1, dt * 4);
+    m.rot += ((ada ? 30 : 8) - m.rot) * Math.min(1, dt * 2);
+    m.g.userData.rotor.rotation.y += m.rot * dt;
+    pasangModel(m);
+    sinkronPemain(m);
+    pasangKamera(m.x, m.y + 2, m.z, 15, 0);
+  }
+
+  function jalankanJet(dt) {
+    const m = mobil, kd = gudang.kend.jet;
+    m.tabrakCd = Math.max(0, m.tabrakCd - dt);
+    const ada = bakarBensin(kd, KEND.jet.boros, dt);
+    const g = bacaGerak();
+    let alt = klem(input.alt + (tombolKey["KeyR"] ? 1 : 0) - (tombolKey["KeyC"] ? 1 : 0), -1, 1);
+    input.lompat = false;
+    const tanah = tinggiDi(m.x, m.z);
+    const diTanah = m.y <= tanah + 0.7;
+    if (ada) {
+      if (g.jy < -0.2) m.v += 30 * -g.jy * dt;
+      else if (g.jy > 0.2) m.v -= 30 * g.jy * dt;
+    } else m.v -= 15 * dt;
+    if (diTanah && Math.abs(g.jy) < 0.2) m.v -= 8 * dt;
+    m.v = klem(m.v, 0, 85);
+    if (!diTanah && ada && m.v < 28) m.v += 12 * dt;
+    if (alt > 0 && (m.v < 30 || !ada)) alt = 0;
+    m.pitch += (alt * 0.75 - m.pitch) * Math.min(1, dt * 2.5);
+    m.sink = (!diTanah && (m.v < 30 || !ada)) ? Math.min(25, m.sink + 15 * dt) : 0;
+    if (m.v > 5) m.hadap -= g.jx * 1.2 * dt;
+    m.roll += (g.jx * 0.6 - m.roll) * Math.min(1, dt * 4);
+    m.x += Math.sin(m.hadap) * Math.cos(m.pitch) * m.v * dt;
+    m.z += Math.cos(m.hadap) * Math.cos(m.pitch) * m.v * dt;
+    const vVert = Math.sin(m.pitch) * m.v - m.sink;
+    m.y += vVert * dt;
+    if (m.y < tanah + 0.5) {
+      m.y = tanah + 0.5;
+      if (vVert < -9) { m.v *= 0.5; lukaiKendaraan(Math.round(-vVert * 3)); if (mobil !== m) return; }   // menghantam tanah
+      if (m.pitch < 0) m.pitch = 0;
+      m.sink = 0;
+    }
+    if (m.y > 1200) m.y = 1200;
+    const jx0 = m.x, jz0 = m.z;
+    dorongKeluarTinggi(m, 2);
+    if (Math.hypot(m.x - jx0, m.z - jz0) > 0.02) { const vk = m.v; m.v *= 0.5; if (kenaBenda(m, vk, 0.6)) return; }
+    if (cekTabrakTerbang(m) || cekTabrakMega(m, 3)) return;
+    if (Math.abs(m.x) > BATAS || Math.abs(m.z) > BATAS) m.v *= 0.97;
+    m.x = klem(m.x, -BATAS, BATAS); m.z = klem(m.z, -BATAS, BATAS);
+    asapKendaraan(m, dt, m.v > 1);
+    pasangModel(m);
+    sinkronPemain(m);
+    if (lookId === null) kam.yaw += selisihSudut(kam.yaw, m.hadap + Math.PI) * Math.min(1, dt * 3);
+    pasangKamera(m.x, m.y + 2, m.z, 18, 0);
+  }
+
+  function tembakKend() {
+    const m = mobil, kd = gudang.kend[m.tipe];
+    if (!kd.unPeluru) {
+      if (kd.peluru <= 0) { toast("Peluru habis! Isi di toko 🛒"); cdKend = 1; return; }
+      kd.peluru--;
+    }
+    m.g.updateMatrixWorld(true);
+    const mp = new THREE.Vector3();
+    (m.tipe === "tank" ? m.g.userData.tip : m.g.userData.muzzle).getWorldPosition(mp);
+    if (m.tipe === "jet") {
+      const dir = new THREE.Vector3(Math.sin(m.hadap) * Math.cos(m.pitch), Math.sin(m.pitch), Math.cos(m.hadap) * Math.cos(m.pitch));
+      dir.x += (Math.random() - 0.5) * 0.01; dir.y += (Math.random() - 0.5) * 0.01; dir.normalize();
+      spawnPeluru(mp, dir, 220, 30, "k"); cdKend = 0.06;
+    } else if (m.tipe === "heli") {
+      const dir = arahBidik(mp);
+      dir.x += (Math.random() - 0.5) * 0.03; dir.y += (Math.random() - 0.5) * 0.03; dir.normalize();
+      spawnPeluru(mp, dir, 150, 26, "k"); cdKend = 0.09;
+    } else {
+      spawnPeluru(mp, arahBidik(mp), 110, 170, "s"); cdKend = 0.9;
+    }
+  }
+
+  // ================= Siang / malam =================
+  const cLangitSiang = new THREE.Color(0x9fd0f0), cLangitMalam = new THREE.Color(0x070c1a);
+  const senter = new THREE.PointLight(0xffe6b0, 0, 38);
+  scene.add(senter);
+  scene.add(camera);                       // agar senjata 'dari mata' (anak kamera) bisa tampil
+  function terapkanLangit() {
+    scene.background.copy(cLangitSiang).lerp(cLangitMalam, langit);
+    scene.fog.color.copy(scene.background);
+    const fk = megaAda ? 1.6 : 1;
+    scene.fog.near = (45 - 25 * langit) * fk; scene.fog.far = (170 - 80 * langit) * fk;
+    hemi.intensity = 0.95 - 0.55 * langit;
+    matahari.intensity = 0.8 - 0.68 * langit;
+    senter.intensity = 1.3 * langit;
+  }
+  function mulaiMalam() {
+    faseHari = "malam"; faseT = 0; langitTarget = 1;
+    const total = Math.min(ZOMBIE_MAKS_MALAM, ZOMBIE_AWAL * Math.pow(2, Math.min(hari - 1, 20)));
+    antrean = total;
+    if (hari % GEL_BOSS === 0) { bikinZombie("boss"); toast("☠️ BOSS muncul! Gelombang " + hari); }
+    else toast("Gelombang " + hari + " 🌙 " + total + " zombie muncul!");
+  }
+  function mulaiPagi() {
+    faseHari = "pagi"; pagiT = DURASI_PAGI; langitTarget = 0;
+    acakMedkit();
+    const hadiah = HADIAH_GELOMBANG * Math.pow(2, Math.min(hari - 1, 40));
+    coin += hadiah; aturStat();
+    toast("Pagi ☀️ Gelombang " + hari + " selesai! Hadiah +" + fmt(hadiah) + " 🪙");
+  }
+  const fmtWaktu = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+  function updateFase(dt) {
+    let hidup = 0, boss = null;
+    for (const k in jumlahTipe) jumlahTipe[k] = 0;
+    for (const z of zombies) if (!z.mati) { hidup++; jumlahTipe[z.tipe]++; if (TIPE_Z[z.tipe].mega && (!boss || z.hpMax > boss.hpMax)) boss = z; }
+    let teks;
+    if (faseHari === "malam") {
+      faseT += dt;
+      spawnT -= dt;
+      if (antrean > 0 && hidup < MAKS_SERENTAK && spawnT <= 0) {
+        const tp = bikinZombie(); antrean--; spawnT = 0.2; hidup++;
+        if (tp === "tank" || tp === "raksasa") toast("⚠️ " + TIPE_Z[tp].nama + " muncul!");
+      }
+      if (antrean === 0 && hidup === 0) mulaiPagi();
+      teks = "🌙 Gelombang " + hari + " · Zombie " + (hidup + antrean);
+    } else {
+      pagiT -= dt;
+      if (pagiT <= 0) { hari++; mulaiMalam(); }
+      teks = "☀️ Pagi · Gelombang " + (hari + 1) + " dalam " + fmtWaktu(Math.max(0, pagiT));
+    }
+    if ($("fase").textContent !== teks) $("fase").textContent = teks;
+    if (boss) {
+      $("bossBar").style.display = "block";
+      $("bossNama").textContent = "☠️ " + TIPE_Z[boss.tipe].nama + " · " + Math.round(Math.hypot(boss.x - p.x, boss.z - p.z)) + " m";
+      $("bossIsi").style.width = Math.max(0, boss.hp / boss.hpMax * 100) + "%";
+    } else $("bossBar").style.display = "none";
+  }
+
+  // ================= Toko =================
+  const toko = { tab: "senjata", pilih: null };
+  function barisItem(nama, ket, tombol) {
+    return '<div class="item"><div class="kiri"><div class="nama">' + nama + '</div><div class="ket">' + ket + '</div></div>' + tombol + '</div>';
+  }
+  function tombolToko(teks, aksi, id, kelas) {
+    return '<button class="' + (kelas || "") + '" data-aksi="' + aksi + '" data-id="' + (id || "") + '">' + teks + '</button>';
+  }
+  function daftarPilih(j) {
+    const hasil = [];
+    if (j === "ammoUn" || j === "isiPeluru") {
+      for (const id in SENJATA) {
+        const inv = gudang.senjata[id]; if (!inv.ada) continue;
+        hasil.push({ kunci: "senjata:" + id, nama: SENJATA[id].nama, ket: "Peluru: " + (inv.un ? "∞" : fmt(inv.ammo)),
+          boleh: !inv.un && (j === "ammoUn" || inv.ammo < SENJATA[id].ammo), alasan: inv.un ? "Sudah ∞" : "Masih penuh" });
+      }
+      for (const id in KEND) {
+        const kd = gudang.kend[id]; if (!kd.ada || !KEND[id].senjata) continue;
+        hasil.push({ kunci: "kend:" + id, nama: KEND[id].ikon + " " + KEND[id].nama, ket: "Peluru: " + (kd.unPeluru ? "∞" : fmt(kd.peluru)),
+          boleh: !kd.unPeluru && (j === "ammoUn" || kd.peluru < KEND[id].ammo), alasan: kd.unPeluru ? "Sudah ∞" : "Masih penuh" });
+      }
+    } else if (j === "isiDarah") {
+      for (const id in KEND) {
+        const kd = gudang.kend[id]; if (!kd.ada) continue;
+        hasil.push({ kunci: "kend:" + id, nama: KEND[id].ikon + " " + KEND[id].nama, ket: "Darah: " + Math.round(kd.hp) + "/" + KEND[id].hp,
+          boleh: kd.hp < KEND[id].hp, alasan: "Darah penuh" });
+      }
+    } else {
+      for (const id in KEND) {
+        const kd = gudang.kend[id]; if (!kd.ada) continue;
+        hasil.push({ kunci: "kend:" + id, nama: KEND[id].ikon + " " + KEND[id].nama, ket: "Bensin: " + (kd.unBensin ? "∞" : Math.round(kd.bensin) + "%"),
+          boleh: !kd.unBensin && (j === "fuelUn" || kd.bensin < 100), alasan: kd.unBensin ? "Sudah ∞" : "Masih penuh" });
+      }
+    }
+    return hasil;
+  }
+  function tokoRender() {
+    $("tokoCoin").textContent = fmt(coin);
+    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("pilih", t.dataset.tab === toko.tab));
+    let h = "";
+    if (toko.pilih) {
+      const j = toko.pilih;
+      const judul = { ammoUn: "Peluru Unlimited", fuelUn: "Bensin Unlimited", isiBensin: "Isi Bensin Penuh", isiPeluru: "Isi Peluru Penuh", isiDarah: "Isi Darah Kendaraan" }[j];
+      h += '<div class="ket" style="margin-bottom:8px">' + judul + " (🪙 " + fmt(HARGA_UPG[j]) + "): pilih itemnya</div>";
+      const daftar = daftarPilih(j);
+      if (!daftar.length) h += '<div class="ket" style="margin-bottom:8px">Belum ada item yang cocok. Beli dulu di tab lain.</div>';
+      daftar.forEach(d => { h += barisItem(d.nama, d.ket, d.boleh ? tombolToko("Pilih", "pilihItem", d.kunci, "kuning") : tombolToko(d.alasan, "x", "", "abu")); });
+      h += tombolToko("◀ Kembali", "batalPilih", "", "abu");
+    } else if (toko.tab === "senjata") {
+      for (const id in SENJATA) {
+        const w = SENJATA[id], inv = gudang.senjata[id];
+        const ket = w.info + " · dmg " + w.dmg + (w.pelet > 1 ? "×" + w.pelet : "") + " · " + (inv.ada ? "Peluru: " + (inv.un ? "∞" : fmt(inv.ammo)) : "Peluru awal " + fmt(w.ammo));
+        const tb = !inv.ada ? tombolToko("Beli 🪙" + fmt(w.harga), "beliSenjata", id, "kuning")
+          : senjataAktif === id ? tombolToko("Dipakai", "x", id, "abu") : tombolToko("Pakai", "pakaiSenjata", id);
+        h += barisItem(w.nama, ket, tb);
+      }
+    } else if (toko.tab === "kendaraan") {
+      for (const id in KEND) {
+        const c = KEND[id], kd = gudang.kend[id];
+        const ket = !kd.ada ? (c.senjata ? "Bisa menembak · peluru " + fmt(c.ammo) : "Tanpa senjata") + " · darah " + c.hp + " · bensin terbatas"
+          : "❤ " + Math.round(kd.hp) + "/" + c.hp + " · ⛽ " + (kd.unBensin ? "∞" : Math.round(kd.bensin) + "%") + (c.senjata ? " · 🔫 " + (kd.unPeluru ? "∞" : fmt(kd.peluru)) : "");
+        const tb = !kd.ada ? tombolToko("Beli 🪙" + fmt(c.harga), "beliKend", id, "kuning") : tombolToko("Panggil", "panggil", id);
+        h += barisItem(c.ikon + " " + c.nama, ket, tb);
+      }
+    } else if (toko.tab === "trade") {
+      h += '<div class="ket" style="margin-bottom:8px">Pedagang: jual atau beli bahan. Trade antar pemain menyusul bersama multiplayer.</div>';
+      TRADE.forEach(tr => {
+        h += barisItem(tr.nama + " (punya " + inventori[tr.id].jumlah + ")", "Jual " + tr.jual + " 🪙 · Beli " + tr.beli + " 🪙 per buah",
+          tombolToko("Jual 1", "jual", tr.id + ":1") + tombolToko("Jual 10", "jual", tr.id + ":10") + tombolToko("Beli 1", "beliBarang", tr.id + ":1", "kuning") + tombolToko("Beli 10", "beliBarang", tr.id + ":10", "kuning"));
+      });
+    } else {
+      h += barisItem("Peluru Unlimited", "Pilih senjata atau kendaraan (tank, heli, jet)", tombolToko("🪙" + fmt(HARGA_UPG.ammoUn), "upg", "ammoUn", "kuning"));
+      h += barisItem("Bensin Unlimited", "Pilih kendaraan yang mau dibuat tanpa batas bensin", tombolToko("🪙" + fmt(HARGA_UPG.fuelUn), "upg", "fuelUn", "kuning"));
+      h += barisItem("Isi Bensin Penuh", "Isi ulang bensin kendaraan", tombolToko("🪙" + fmt(HARGA_UPG.isiBensin), "upg", "isiBensin"));
+      h += barisItem("Isi Peluru Penuh", "Isi ulang peluru senjata atau kendaraan", tombolToko("🪙" + fmt(HARGA_UPG.isiPeluru), "upg", "isiPeluru"));
+      h += barisItem("Isi Darah Kendaraan", "Pulihkan darah kendaraan sampai penuh (bukan unlimited)", tombolToko("🪙" + fmt(HARGA_UPG.isiDarah), "upg", "isiDarah", "kuning"));
+    }
+    $("tokoIsi").innerHTML = h;
+  }
+  function bukaToko() {
+    if (status !== "tempur") return;
+    tokoBuka = true; toko.pilih = null;
+    $("toko").style.display = "flex";
+    resetKontrol(); input.tembak = false;
+    tokoRender();
+  }
+  function tutupToko() { tokoBuka = false; $("toko").style.display = "none"; }
+  function aksiToko(aksi, id) {
+    if (aksi === "tab") { toko.tab = id; toko.pilih = null; }
+    else if (aksi === "upg") toko.pilih = id;
+    else if (aksi === "batalPilih") toko.pilih = null;
+    else if (aksi === "pakaiSenjata") { senjataAktif = id; pakaiModel(); }
+    else if (aksi === "beliSenjata") {
+      const w = SENJATA[id];
+      if (coin < w.harga) { toast("Coin kurang 🪙"); return; }
+      coin -= w.harga;
+      gudang.senjata[id] = { ada: true, ammo: w.ammo, un: false };
+      senjataAktif = id; pakaiModel();
+      toast(w.nama + " dibeli ✅");
+    } else if (aksi === "beliKend") {
+      const c = KEND[id];
+      if (coin < c.harga) { toast("Coin kurang 🪙"); return; }
+      if (mobil) { toast("Turun dulu dari kendaraan"); return; }
+      coin -= c.harga;
+      gudang.kend[id].ada = true;
+      panggilKend(id);
+      toast(c.nama + " dibeli dan muncul di dekatmu ✅");
+    } else if (aksi === "panggil") {
+      if (panggilKend(id)) toast(KEND[id].nama + " dipanggil ke dekatmu");
+    } else if (aksi === "jual") {
+      const [bid, qs] = id.split(":"), q = +qs, tr = TRADE.find(t => t.id === bid);
+      if (inventori[bid].jumlah < q) { toast("Stok " + tr.nama + " kurang"); return; }
+      inventori[bid].jumlah -= q; coin += tr.jual * q; updateHotbar();
+      toast("Terjual +" + fmt(tr.jual * q) + " 🪙");
+    } else if (aksi === "beliBarang") {
+      const [bid, qs] = id.split(":"), q = +qs, tr = TRADE.find(t => t.id === bid);
+      if (coin < tr.beli * q) { toast("Coin kurang 🪙"); return; }
+      coin -= tr.beli * q; inventori[bid].jumlah += q; updateHotbar();
+      toast(tr.nama + " ×" + q + " dibeli");
+    } else if (aksi === "pilihItem") {
+      const j = toko.pilih;
+      if (coin < HARGA_UPG[j]) { toast("Coin kurang 🪙"); return; }
+      const [jenis, kid] = id.split(":");
+      if (jenis === "senjata") {
+        const inv = gudang.senjata[kid];
+        if (j === "ammoUn") inv.un = true; else inv.ammo = SENJATA[kid].ammo;
+      } else {
+        const kd = gudang.kend[kid];
+        if (j === "ammoUn") kd.unPeluru = true;
+        else if (j === "fuelUn") kd.unBensin = true;
+        else if (j === "isiBensin") { kd.bensin = 100; kd.warn20 = false; kd.warn0 = false; }
+        else if (j === "isiDarah") kd.hp = KEND[kid].hp;
+        else kd.peluru = KEND[kid].ammo;
+      }
+      coin -= HARGA_UPG[j];
+      toast("Berhasil ✅"); toko.pilih = null;
+    } else return;
+    aturStat(); aturInfo(); aturUI(); tokoRender();
+  }
+
+  // ================= Survival: tebang pohon, dinding, menara =================
+  const bangunan = [];
+  const menaraList = [];
+  const pohonTumbang = [];
+  const bKayuTembok = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
+  const bKayuGelap = new THREE.MeshLambertMaterial({ color: 0x5a3a1a });
+  let swingT = 0, tPeringatan = 0;
+
+  function aturPohon(t, tampil) {
+    const ch = t.ch;
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.setScalar(tampil ? t.s : 0.0001);
+    dummy.position.set(t.x, t.y + t.s, t.z); dummy.updateMatrix(); ch.batangI.setMatrixAt(t.idx, dummy.matrix);
+    dummy.position.set(t.x, t.y + t.s * 4, t.z); dummy.updateMatrix(); ch.daunI.setMatrixAt(t.idx, dummy.matrix);
+    if (ch.batangI.instanceMatrix) { ch.batangI.instanceMatrix.needsUpdate = true; ch.daunI.instanceMatrix.needsUpdate = true; }
+    t.o.x = tampil ? t.x : 1e6;     // rintangan pohon "dipindah jauh" saat tumbang
+  }
+  function tumbangkan(t) {
+    t.tumbang = true; t.sisa = RESPAWN_POHON;
+    aturPohon(t, false);
+    pohonTumbang.push(t);
+    inventori.kayu.jumlah += KAYU_PER_POHON;
+    updateHotbar();
+    const k = inventori.kayu.jumlah;
+    toast("+" + KAYU_PER_POHON + " 🪵 · kayu " + k + (k >= KAYU_MENARA ? " (cukup untuk Menara!)" : "/" + KAYU_MENARA));
+  }
+  function pulihkanPohon() {
+    for (const t of pohonTumbang) if (t.ch.aktif) { t.tumbang = false; t.hp = HIT_POHON; aturPohon(t, true); }
+    pohonTumbang.length = 0;
+  }
+  function updatePohon(dt) {
+    for (let k = pohonTumbang.length - 1; k >= 0; k--) {
+      const t = pohonTumbang[k];
+      if (!t.ch.aktif) { pohonTumbang.splice(k, 1); continue; }      // chunk sudah hilang: pohon muncul lagi saat dimuat ulang
+      t.sisa -= dt;
+      if (t.sisa <= 0) { t.tumbang = false; t.hp = HIT_POHON; aturPohon(t, true); pohonTumbang.splice(k, 1); }
+    }
+    if (swingT > 0) swingT = Math.max(0, swingT - dt);
+    const ayunan = swingT > 0 ? Math.sin((1 - swingT / 0.3) * Math.PI) * 1.5 : 0;
+    kapakG.rotation.x = senjataDiKamera ? 0.1 - ayunan : -0.3 + ayunan;
+  }
+  function tebang() {
+    swingT = 0.3;
+    const fx = -Math.sin(kam.yaw), fz = -Math.cos(kam.yaw);
+    let terbaik = null, jarakMin = 1e9;
+    const pcx = Math.floor(p.x / CH), pcz = Math.floor(p.z / CH);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      const ch = chunks.get(kunci(pcx + a, pcz + b));
+      if (!ch) continue;
+      for (const t of ch.pohon) {
+        if (t.tumbang) continue;
+        const dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz);
+        if (d > 3.8 + 0.4 * t.s) continue;
+        if ((dx * fx + dz * fz) / (d || 1) < 0.35) continue;
+        if (d < jarakMin) { jarakMin = d; terbaik = t; }
+      }
+    }
+    if (terbaik) {
+      terbaik.hp--;
+      if (terbaik.hp <= 0) tumbangkan(terbaik); else toast("🪓 " + (HIT_POHON - terbaik.hp) + "/" + HIT_POHON);
+      return 0.45;
+    }
+    let kena = false;                      // tidak ada pohon: kapak bisa memukul zombie
+    for (const z of zombies) {
+      if (z.mati) continue;
+      const dx = z.x - p.x, dz = z.z - p.z, d = Math.hypot(dx, dz);
+      if (d < 2.8 + z.r - 1 && (dx * fx + dz * fz) / (d || 1) > 0.3) { lukaiZombie(z, 45); kena = true; }
+    }
+    if (!kena) {
+      const t = performance.now() / 1000;
+      if (t - tPeringatan > 2) { toast("Dekati pohon dan arahkan kamera ke batangnya"); tPeringatan = t; }
+    }
+    return 0.45;
+  }
+
+  // ---- dinding ----
+  function bangunTembok(x1, z1, x2, z2, tinggi) {
+    const L = Math.hypot(x2 - x1, z2 - z1), n = Math.max(2, Math.ceil(L / 1.0));
+    let gMin = 1e9, gMax = -1e9;
+    const obs = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, x = x1 + (x2 - x1) * t, z = z1 + (z2 - z1) * t, g = tinggiDi(x, z);
+      gMin = Math.min(gMin, g); gMax = Math.max(gMax, g);
+      const o = { x, z, r: 0.8, h: 1.2 };
+      tambahRintangan(o); obs.push(o);
+    }
+    const alas = gMin - 0.6, atas = gMax + tinggi;
+    const sepanjangX = Math.abs(x2 - x1) >= Math.abs(z2 - z1);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sepanjangX ? L : 0.6, atas - alas, sepanjangX ? 0.6 : L), bKayuTembok);
+    m.position.set((x1 + x2) / 2, (alas + atas) / 2, (z1 + z2) / 2);
+    scene.add(m);
+    return { meshes: [m], obs };
+  }
+  function pasangDinding() {
+    const fx = -Math.sin(kam.yaw), fz = -Math.cos(kam.yaw);
+    const cx = p.x + fx * 3.5, cz = p.z + fz * 3.5;
+    bangunan.push(Math.abs(fx) > Math.abs(fz) ? bangunTembok(cx, cz - 2, cx, cz + 2, 2.2) : bangunTembok(cx - 2, cz, cx + 2, cz, 2.2));
+    inventori.dinding.jumlah--; updateHotbar();
+    toast("Dinding dipasang 🧱");
+    return 0.6;
+  }
+
+  // ---- menara: platform tinggi + tanjakan, bisa menembak dari atas ----
+  function lantaiDi(x, z, y) {
+    let g = tinggiDi(x, z);
+    for (const m of menaraList) {
+      let h = null;
+      if (Math.abs(x - m.cx) <= 2.6 && Math.abs(z - m.cz) <= 2.6) h = m.hPlat;
+      else {
+        const rx = x - m.sx, rz = z - m.sz;
+        const t = (rx * m.dx + rz * m.dz) / m.L, s = rx * m.dz - rz * m.dx;
+        if (t >= 0 && t <= 1 && Math.abs(s) <= 1.6) h = m.h0 + (m.hPlat - m.h0) * t;
+      }
+      if (h !== null && h > g && h <= y + 1.3) g = h;
+    }
+    return g;
+  }
+  function pasangMenara() {
+    const fx = -Math.sin(kam.yaw), fz = -Math.cos(kam.yaw);
+    const dominanX = Math.abs(fx) > Math.abs(fz);
+    const dx = dominanX ? Math.sign(fx) || 1 : 0, dz = dominanX ? 0 : Math.sign(fz) || 1;   // arah dari kamu ke menara
+    const L = 12, H = 6.5;
+    const cx = Math.round(p.x + dx * (L + 3.5)), cz = Math.round(p.z + dz * (L + 3.5));
+    const ex = cx - dx * 2.5, ez = cz - dz * 2.5;                 // tepi platform yang menghadap kamu
+    const sx = ex - dx * L, sz = ez - dz * L;                     // awal tanjakan (dekat kamu)
+    const h0 = tinggiDi(sx, sz), base = tinggiDi(cx, cz), hPlat = Math.max(base, h0) + H;
+    const b = { meshes: [], obs: [], menara: null };
+    const kotakMenara = (w, h, d, bahan, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bahan); m.position.set(x, y, z); scene.add(m); b.meshes.push(m); return m; };
+    kotakMenara(5.4, 0.4, 5.4, bKayuTembok, cx, hPlat - 0.2, cz);                                 // lantai atas
+    [[-2.7, -2.7], [2.7, -2.7], [-2.7, 2.7], [2.7, 2.7]].forEach(([ox, oz]) => {                 // 4 tiang
+      const bawah = base - 1.5;
+      kotakMenara(0.9, hPlat - bawah, 0.9, bKayuGelap, cx + ox, (bawah + hPlat) / 2, cz + oz);
+      const o = { x: cx + ox, z: cz + oz, r: 0.7, h: hPlat, top: hPlat - 0.3 };
+      tambahRintangan(o); b.obs.push(o);
+    });
+    [[0, -2.7, 5.4, 0.15], [0, 2.7, 5.4, 0.15], [-2.7, 0, 0.15, 5.4], [2.7, 0, 0.15, 5.4]].forEach(([ox, oz, w, d]) => {   // pagar pendek
+      const sisiRamp = (dx !== 0 && Math.abs(ox + dx * 2.7) < 0.01) || (dz !== 0 && Math.abs(oz + dz * 2.7) < 0.01);
+      if (!sisiRamp) kotakMenara(w, 0.9, d, bKayuGelap, cx + ox, hPlat + 0.45, cz + oz);
+    });
+    const Lr = Math.hypot(L, hPlat - h0), sudut = Math.atan2(hPlat - h0, L);                       // tanjakan
+    const ramp = kotakMenara(dx !== 0 ? Lr : 3.2, 0.4, dx !== 0 ? 3.2 : Lr, bKayuTembok, (sx + ex) / 2, (h0 + hPlat) / 2 - 0.2, (sz + ez) / 2);
+    if (dx !== 0) ramp.rotation.z = dx > 0 ? sudut : -sudut; else ramp.rotation.x = dz > 0 ? -sudut : sudut;
+    b.menara = { cx, cz, hPlat, sx, sz, dx, dz, L, h0 };
+    menaraList.push(b.menara);
+    bangunan.push(b);
+    inventori.menara.jumlah--; updateHotbar();
+    toast("Menara berdiri! Naiki tanjakannya lalu tembak dari atas 🗼");
+    return 1;
+  }
+  function bersihkanBangunan() {
+    bangunan.forEach(b => {
+      b.meshes.forEach(m => scene.remove(m));
+      b.obs.forEach(hapusRintangan);
+    });
+    bangunan.length = 0; menaraList.length = 0;
+  }
+  function resetSurvival() { resetInventori(); pulihkanPohon(); bersihkanBangunan(); swingT = 0; }
+
+  function aksiPegang() {
+    const it = itemDipegang();
+    if (it === "glock") return tembakPemain() ? SENJATA[senjataAktif].jeda : 0.4;
+    if (it === "kapak") return tebang();
+    if (it === "dinding") return pasangDinding();
+    if (it === "menara") return pasangMenara();
+    return 0.4;
+  }
+  window.toastGame = toast;
+  window.pakaiModelGame = () => pakaiModel();
+  window.dapatPakaiHotbar = () => status === "tempur" && !mobil && !tokoBuka;
+
+  // ================= Alur game =================
+  function aturUI() {
+    const s = status, tempur = s === "tempur", tipe = mobil ? mobil.tipe : null;
+    const kaki = tempur && !mobil;
+    const darat = tempur && (tipe === "mobil" || tipe === "tank");
+    const terbang = tempur && (tipe === "heli" || tipe === "jet");
+    const bersenjata = tempur && !!mobil && KEND[tipe].senjata;
+    const flexIf = (id, ok) => { $(id).style.display = ok ? "flex" : "none"; };
+    $("lobby").style.display = s === "lobby" ? "flex" : "none";
+    $("hasil").style.display = s === "selesai" ? "flex" : "none";
+    $("hud").style.display = s !== "lobby" ? "block" : "none";
+    $("lookZone").style.pointerEvents = (s === "lobby" || s === "selesai") ? "none" : "auto";
+    $("joyBase").style.display = (s === "terjun" || kaki || terbang) ? "block" : "none";
+    $("altBase").style.display = terbang ? "block" : "none";
+    ["btnKiri", "btnKanan", "btnGas", "btnRem"].forEach(id => flexIf(id, darat));
+    flexIf("btnTembak", kaki || bersenjata);
+    $("btnTembak").classList.toggle("geser", bersenjata);
+    flexIf("btnLari", kaki); flexIf("btnLompat", kaki); flexIf("btnScope", kaki);
+    flexIf("btnGanti", kaki && jumlahSenjata() > 1);
+    flexIf("btnAksi", s === "pesawat" || (s === "terjun" && !terbuka));
+    $("aksiTeks").textContent = s === "pesawat" ? "LOMPAT" : "BUKA";
+    $("info").style.display = tempur ? "block" : "none";
+    $("btnToko").style.display = tempur ? "block" : "none";
+    if (!kaki) $("stamWrap").style.display = "none";
+    $("btnKamera").style.display = kaki ? "block" : "none";
+    $("btnPengaturan").style.display = kaki ? "block" : "none";
+    if (!kaki) tutupPengaturan();
+    if (!tempur) $("bossBar").style.display = "none";
+    $("hotbar").style.display = kaki ? "flex" : "none";
+    $("barTombolTas").style.display = kaki ? "flex" : "none";
+    if (!kaki) { tutupInventory(); tutupCrafting(); }
+    updateHotbar();
+    if (!tempur) scope = false;
+    aturTombolMobil();
+    terapkanScope();
+    lepasJoy();
+    resetKontrol();
+  }
+  function terapkanScope() {
+    const tipe = mobil ? mobil.tipe : null;
+    $("scopeOv").style.display = scope ? "block" : "none";
+    $("crosshair").style.display = (status === "tempur" && !scope && (!mobil || tipe === "tank" || tipe === "heli")) ? "block" : "none";
+    const fps = status === "tempur" && !mobil && pengaturan.mode === "orang1";
+    aturParentSenjata(fps);
+    vm.visible = !scope;
+    if (status === "tempur" || status === "selesai") pemain.g.visible = !scope && !mobil && !fps;
+  }
+
+  function mulaiMatch() {
+    bersihkanZombie(); bersihkanPeluru(); resetGudang(); resetSurvival();
+    stamina = STAMINA_MAKS; capek = false; megaAda = false; bossKalah = 0; bersihkanAsap();
+    kills = 0; p.hp = 100; terbuka = false; cdTembak = 0; mobil = null; dekatMobil = null;
+    tutupToko();
+    hari = HARI_AWAL; faseHari = "malam"; faseT = 0; langitTarget = 1;
+    aturHp(); acakMedkit(); aturStat();
+    const a = Math.random() * Math.PI * 2;
+    rute.hx = Math.cos(a); rute.hz = Math.sin(a);
+    const off = (Math.random() - 0.5) * 240;
+    rute.x = -rute.hx * 340 - rute.hz * off; rute.z = -rute.hz * 340 + rute.hx * off;
+    rute.y = 140; rute.jarak = 0;
+    pesawat.visible = true;
+    pesawat.position.set(rute.x, rute.y, rute.z);
+    pesawat.rotation.y = Math.atan2(rute.hx, rute.hz);
+    pemain.g.visible = false; parasut.visible = false; tampilSenjata(false);
+    pemain.pose.rotation.x = 0;
+    kam.yaw = Math.atan2(-rute.hx, -rute.hz); kam.pitch = 0.3;
+    status = "pesawat";
+    aturUI();
+    toast("Tekan LOMPAT untuk terjun 🪂");
+  }
+  function lompatDariPesawat() {
+    status = "terjun"; terbuka = false;
+    p.x = rute.x; p.z = rute.z; p.y = rute.y - 3;
+    p.vx = rute.hx * 25; p.vz = rute.hz * 25; p.vy = 0;
+    p.hadap = Math.atan2(rute.hx, rute.hz);
+    pemain.g.visible = true; pemain.pose.rotation.x = 1.35;
+    aturUI();
+    toast("Tekan BUKA untuk parasut (otomatis di bawah 45 m)");
+  }
+  function bukaParasut() { terbuka = true; parasut.visible = true; pemain.pose.rotation.x = 0; aturUI(); }
+  function mendarat() {
+    status = "tempur";
+    p.y = tinggiDi(p.x, p.z); p.vy = 0; p.diTanah = true;
+    parasut.visible = false; pemain.pose.rotation.x = 0;
+    tampilSenjata(true);
+    kam.pitch = 0.2;
+    aturUI(); aturInfo();
+    mulaiMalam();
+    setTimeout(() => { if (status === "tempur") toast("Glock 17 · 1000 peluru · buka 🛒 untuk belanja"); }, 2300);
+  }
+  function akhiri() {
+    status = "selesai"; input.tembak = false; mobil = null; dekatMobil = null;
+    tutupToko();
+    $("hasilJudul").textContent = "KAMU MATI";
+    $("hasilJudul").style.color = "#f87171";
+    $("hasilIsi").textContent = "Bertahan sampai Gelombang " + hari + " · Zombie dibunuh: " + kills + " · Coin: " + fmt(coin);
+    aturUI();
+  }
+  function kembaliLobby() {
+    bersihkanZombie(); bersihkanPeluru(); resetGudang(); resetSurvival(); tutupToko();
+    pesawat.visible = false; parasut.visible = false;
+    pemain.g.visible = true; tampilSenjata(true); pemain.pose.rotation.x = 0;
+    p.x = 0; p.z = 0; p.y = tinggiDi(0, 0); p.vx = p.vz = p.vy = 0;
+    mobil = null; dekatMobil = null; langitTarget = 0;
+    status = "lobby";
+    aturUI();
+  }
+
+  // ================= Kontrol =================
+  const joyBase = $("joyBase"), joyKnob = $("joyKnob");
+  let joyId = null;
+  function geserJoy(e) {
+    const r = joyBase.getBoundingClientRect(), radius = r.width / 2;
+    let dx = e.clientX - (r.left + radius), dy = e.clientY - (r.top + radius);
+    const j = Math.hypot(dx, dy);
+    if (j > radius) { dx = dx / j * radius; dy = dy / j * radius; }
+    joyKnob.style.transform = "translate(" + dx + "px," + dy + "px)";
+    input.jx = dx / radius; input.jy = dy / radius;
+  }
+  function lepasJoy() { joyId = null; joyKnob.style.transform = "translate(0,0)"; input.jx = 0; input.jy = 0; }
+  joyBase.addEventListener("pointerdown", e => { joyId = e.pointerId; joyBase.setPointerCapture(e.pointerId); geserJoy(e); });
+  joyBase.addEventListener("pointermove", e => { if (e.pointerId === joyId) geserJoy(e); });
+  joyBase.addEventListener("pointerup", e => { if (e.pointerId === joyId) lepasJoy(); });
+  joyBase.addEventListener("pointercancel", lepasJoy);
+
+  const altBase = $("altBase"), altKnob = $("altKnob");
+  let altId = null;
+  function geserAlt(e) {
+    const r = altBase.getBoundingClientRect(), radius = (r.height - 52) / 2;
+    const dy = klem(e.clientY - (r.top + r.height / 2), -radius, radius);
+    altKnob.style.transform = "translateY(" + dy + "px)";
+    input.alt = -dy / radius;
+  }
+  function lepasAlt() { altId = null; altKnob.style.transform = "translateY(0)"; input.alt = 0; }
+  altBase.addEventListener("pointerdown", e => { altId = e.pointerId; altBase.setPointerCapture(e.pointerId); geserAlt(e); });
+  altBase.addEventListener("pointermove", e => { if (e.pointerId === altId) geserAlt(e); });
+  altBase.addEventListener("pointerup", e => { if (e.pointerId === altId) lepasAlt(); });
+  altBase.addEventListener("pointercancel", lepasAlt);
+  function resetKontrol() {
+    input.gas = input.rem = input.kiri = input.kanan = false;
+    lepasAlt();
+    document.querySelectorAll(".tombol").forEach(el => el.classList.remove("aktif"));
+  }
+
+  const lookZone = $("lookZone");
+  let lookId = null, lx = 0, ly = 0;
+  lookZone.addEventListener("pointerdown", e => { lookId = e.pointerId; lookZone.setPointerCapture(e.pointerId); lx = e.clientX; ly = e.clientY; });
+  lookZone.addEventListener("pointermove", e => {
+    if (e.pointerId !== lookId) return;
+    const sens = (scope ? 0.35 : 1) * pengaturan.sens;
+    const batasAtas = (pengaturan.mode === "orang1" && status === "tempur" && !mobil) ? -1.3 : -0.35;
+    kam.yaw -= (e.clientX - lx) * 0.006 * sens;
+    kam.pitch = klem(kam.pitch + (e.clientY - ly) * 0.004 * sens, batasAtas, 1.2);
+    lx = e.clientX; ly = e.clientY;
+  });
+  const lepasLook = e => { if (e.pointerId === lookId) lookId = null; };
+  lookZone.addEventListener("pointerup", lepasLook);
+  lookZone.addEventListener("pointercancel", lepasLook);
+
+  function pasangTahan(id, aksi) {
+    const el = $(id);
+    el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); el.classList.add("aktif"); aksi(true); });
+    const lepas = () => { el.classList.remove("aktif"); aksi(false); };
+    el.addEventListener("pointerup", lepas);
+    el.addEventListener("pointercancel", lepas);
+  }
+  pasangTahan("btnLari", v => { input.lari = v; });
+  pasangTahan("btnLompat", v => { if (v) input.lompat = true; });
+  pasangTahan("btnTembak", v => { input.tembak = v; });
+  pasangTahan("btnKiri", v => { input.kiri = v; });
+  pasangTahan("btnKanan", v => { input.kanan = v; });
+  pasangTahan("btnGas", v => { input.gas = v; });
+  pasangTahan("btnRem", v => { input.rem = v; });
+
+  function gantiSenjata() {
+    const ids = Object.keys(SENJATA).filter(id => gudang.senjata[id].ada);
+    if (ids.length < 2) return;
+    senjataAktif = ids[(ids.indexOf(senjataAktif) + 1) % ids.length];
+    pakaiModel(); aturInfo();
+    toast(SENJATA[senjataAktif].nama);
+  }
+  function tombolNaikTurun() {
+    if (status !== "tempur") return;
+    if (mobil) turunMobil(); else if (dekatMobil) naikMobil(dekatMobil);
+  }
+  $("btnGanti").addEventListener("pointerdown", e => { e.preventDefault(); if (status === "tempur" && !mobil) gantiSenjata(); });
+  $("btnScope").addEventListener("pointerdown", e => { e.preventDefault(); if (status === "tempur" && !mobil) { scope = !scope; terapkanScope(); } });
+  $("btnNaik").addEventListener("pointerdown", e => { e.preventDefault(); tombolNaikTurun(); });
+  $("btnAksi").addEventListener("pointerdown", e => {
+    e.preventDefault();
+    if (status === "pesawat") lompatDariPesawat();
+    else if (status === "terjun" && !terbuka) bukaParasut();
+  });
+  $("btnToko").addEventListener("click", bukaToko);
+  $("btnKamera").addEventListener("click", () => window.setModeKamera(pengaturan.mode === "orang1" ? "orang3" : "orang1"));
+  $("btnPengaturan").addEventListener("click", bukaPengaturan);
+  $("btnTutupToko").addEventListener("click", tutupToko);
+  $("tokoIsi").addEventListener("click", e => {
+    const b = e.target.closest("button[data-aksi]");
+    if (b) aksiToko(b.dataset.aksi, b.dataset.id);
+  });
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => aksiToko("tab", t.dataset.tab)));
+
+  window.addEventListener("keydown", e => {
+    tombolKey[e.code] = true;
+    if (e.code === "Space") input.lompat = true;
+    if (status === "tempur" && !tokoBuka) {
+      if (e.code === "KeyQ" && !mobil) { scope = !scope; terapkanScope(); }
+      if (e.code === "KeyV") tombolNaikTurun();
+      if (e.code === "KeyG" && !mobil) gantiSenjata();
+    }
+    if (e.code === "KeyB") { if (tokoBuka) tutupToko(); else bukaToko(); }
+  });
+  window.addEventListener("keyup", e => { tombolKey[e.code] = false; });
+
+  $("btnSolo").addEventListener("click", mulaiMatch);
+  $("btnMulti").addEventListener("click", () => toast("Multiplayer: coming soon 🚧"));
+  $("btnUlang").addEventListener("click", () => { kembaliLobby(); mulaiMatch(); });
+  $("btnLobby").addEventListener("click", kembaliLobby);
+  $("btnKeluar").addEventListener("click", kembaliLobby);
+  document.querySelectorAll(".warna").forEach(el => {
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".warna").forEach(w => w.classList.remove("pilih"));
+      el.classList.add("pilih");
+      pemain.bBaju.color.setHex(WARNA_PEMAIN[+el.dataset.w]);
+    });
+  });
+
+  // ================= Kamera, tembak, minimap =================
+  function pasangKamera(tx, ty, tz, jarak, offKanan) {
+    const kx = Math.cos(kam.yaw), kz = -Math.sin(kam.yaw);
+    const cx = tx + Math.sin(kam.yaw) * Math.cos(kam.pitch) * jarak + kx * offKanan;
+    const cz = tz + Math.cos(kam.yaw) * Math.cos(kam.pitch) * jarak + kz * offKanan;
+    const cy = Math.max(ty + Math.sin(kam.pitch) * jarak, tinggiDi(cx, cz) + 1);
+    camera.position.set(cx, cy, cz);
+    camera.lookAt(tx + kx * offKanan, ty, tz + kz * offKanan);
+  }
+  // ---- kamera dari mata: senjata menempel di kamera (kanan-bawah layar) ----
+  const vm = new THREE.Group();
+  camera.add(vm);
+  const fpsPose = { pistol: [0.22, -0.24, -0.5], ak: [0.28, -0.3, -0.75], kapak: [0.3, -0.35, -0.55] };
+  const poseAsli = {};
+  let senjataDiKamera = false;
+  function aturParentSenjata(fps) {
+    if (fps === senjataDiKamera) return;
+    senjataDiKamera = fps;
+    [[pistol, "pistol"], [pemain.senjata, "ak"], [kapakG, "kapak"]].forEach(([g, k]) => {
+      if (fps) {
+        poseAsli[k] = [g.position.x, g.position.y, g.position.z, g.rotation.x, g.rotation.y];
+        vm.add(g);
+        g.position.set(fpsPose[k][0], fpsPose[k][1], fpsPose[k][2]);
+        g.rotation.set(k === "kapak" ? 0.1 : 0, Math.PI, 0);
+      } else {
+        pemain.pose.add(g);
+        const a = poseAsli[k];
+        if (a) { g.position.set(a[0], a[1], a[2]); g.rotation.set(a[3], a[4], 0); }
+      }
+    });
+  }
+  function pasangKameraKaki() {
+    if (pengaturan.mode === "orang1") {
+      const cp = Math.cos(kam.pitch - 0.2), sp = Math.sin(kam.pitch - 0.2);
+      const fx = -Math.sin(kam.yaw), fz = -Math.cos(kam.yaw);
+      const ex = p.x + fx * 0.15, ey = p.y + 2.45, ez = p.z + fz * 0.15;
+      camera.position.set(ex, ey, ez);
+      camera.lookAt(ex + fx * cp, ey - sp, ez + fz * cp);
+    } else {
+      pasangKamera(p.x, p.y + 1.8, p.z, scope ? 0.6 : pengaturan.jarak, scope ? 0 : pengaturan.bahu * 0.9);
+    }
+  }
+  window.setModeKamera = function (m) {
+    pengaturan.mode = m; simpanPengaturan();
+    kam.pitch = 0.2;
+    terapkanScope();
+    isiPanelPengaturan();
+    toast(m === "orang1" ? "Kamera: dari mata 👁" : "Kamera: orang ke-3 👤");
+  };
+  function tembakPemain() {
+    const w = SENJATA[senjataAktif], inv = gudang.senjata[senjataAktif];
+    if (!inv.un) {
+      if (inv.ammo <= 0) { toast("Peluru habis! Beli di toko 🛒"); return false; }
+      inv.ammo = Math.max(0, inv.ammo - (w.pakaiAmmo || 1));
+    }
+    camera.updateMatrixWorld(true); pemain.g.updateMatrixWorld(true);
+    const mp = new THREE.Vector3();
+    (senjataAktif === "glock" ? muzzleP : pemain.muzzle).getWorldPosition(mp);
+    const sb = scope ? w.sebar * 0.35 : w.sebar;
+    for (let i = 0; i < w.pelet; i++) {
+      const dir = arahBidik(mp);
+      dir.x += (Math.random() - 0.5) * sb * 2; dir.y += (Math.random() - 0.5) * sb * 2; dir.z += (Math.random() - 0.5) * sb * 2;
+      dir.normalize();
+      spawnPeluru(mp, dir, 240, w.dmg, "p");
+    }
+    (senjataAktif === "glock" ? flashP : pemain.flash).visible = true; flashT = 0.05;
+    aturInfo();
+    return true;
+  }
+  const mm = $("minimap"), mctx = mm.getContext("2d");
+  function gambarMinimap() {
+    const W = mm.width, C = W / 2, skala = C / 100;
+    mctx.clearRect(0, 0, W, W);
+    mctx.fillStyle = "rgba(34,197,94,0.25)";
+    mctx.beginPath(); mctx.arc(C, C, C - 2, 0, 7); mctx.fill();
+    const fx = -Math.sin(kam.yaw), fz = -Math.cos(kam.yaw), rx = Math.cos(kam.yaw), rz = -Math.sin(kam.yaw);
+    const titik = (x, zz) => {
+      const dx = x - p.x, dz = zz - p.z;
+      return [C + (dx * rx + dz * rz) * skala, C - (dx * fx + dz * fz) * skala];
+    };
+    for (const z of zombies) {
+      if (z.mati) continue;
+      const mega = !!TIPE_Z[z.tipe].mega;
+      let [px, py] = titik(z.x, z.z);
+      const dd = Math.hypot(px - C, py - C);
+      if (dd > C - 6) {
+        if (!mega) continue;
+        px = C + (px - C) * (C - 9) / dd; py = C + (py - C) * (C - 9) / dd;
+      }
+      mctx.fillStyle = mega ? "#fb7185" : z.tipe === "tank" ? "#c026d3" : z.tipe === "raksasa" ? "#f97316" : z.tipe === "tentara" ? "#fbbf24" : "#ef4444";
+      mctx.beginPath(); mctx.arc(px, py, mega ? 10 : z.tipe === "biasa" ? 5 : 7, 0, 7); mctx.fill();
+    }
+    for (const id in gudang.kend) {
+      const k = gudang.kend[id].obj;
+      if (!k || k === mobil) continue;
+      const [px, py] = titik(k.x, k.z);
+      if (Math.hypot(px - C, py - C) > C - 6) continue;
+      mctx.fillStyle = id === "heli" ? "#facc15" : id === "jet" ? "#e5e7eb" : id === "tank" ? "#a3e635" : "#38bdf8";
+      mctx.fillRect(px - 5, py - 5, 10, 10);
+    }
+    mctx.fillStyle = "#4ade80";
+    for (const m of medkits) {
+      if (m.ambil) continue;
+      const [px, py] = titik(m.x, m.z);
+      if (Math.hypot(px - C, py - C) > C - 6) continue;
+      mctx.fillRect(px - 2, py - 6, 4, 12); mctx.fillRect(px - 6, py - 2, 12, 4);
+    }
+    mctx.fillStyle = "#fff";
+    mctx.beginPath(); mctx.moveTo(C, C - 9); mctx.lineTo(C - 6, C + 6); mctx.lineTo(C + 6, C + 6); mctx.closePath(); mctx.fill();
+  }
+
+  // ================= Loop utama =================
+  const jam = new THREE.Clock();
+
+  function loop() {
+    requestAnimationFrame(loop);
+    const dt = Math.min(jam.getDelta(), 0.05);
+    frame++;
+    // ⭐ UPDATE MONSTER
+if(monsterActive && monsterModel && window.p){
+  updateMonsterPosition(dt);
+}
+    if (tokoBuka || window.jedaUI) { renderer.render(scene, camera); return; }
+
+    langit += (langitTarget - langit) * Math.min(1, dt * 0.9);
+    terapkanLangit();
+    if (frame % 15 === 0) megaAda = zombies.some(z => !z.mati && TIPE_Z[z.tipe].mega);
+    radMuat = megaAda ? RAD_BOSS : RAD;
+    updateChunks(status === "pesawat" ? rute.x : status === "lobby" ? 0 : p.x, status === "pesawat" ? rute.z : status === "lobby" ? 0 : p.z, 2);
+
+    if (status === "lobby") {
+      lobbyAngle += dt * 0.35;
+      p.y = tinggiDi(0, 0);
+      pemain.g.position.set(0, p.y, 0);
+      pemain.g.rotation.y = 0.6;
+      const cx = Math.sin(lobbyAngle) * 5.5, cz = Math.cos(lobbyAngle) * 5.5;
+      camera.position.set(cx + 1.2, p.y + 2.4, cz);
+      camera.lookAt(1.0, p.y + 1.7, 0);
+    }
+
+    if (pesawat.visible && status !== "lobby") {
+      rute.x += rute.hx * 35 * dt; rute.z += rute.hz * 35 * dt; rute.jarak += 35 * dt;
+      pesawat.position.set(rute.x, rute.y, rute.z);
+      if (status === "pesawat" && rute.jarak > 640) lompatDariPesawat();
+      if (rute.jarak > 760) pesawat.visible = false;
+    }
+    if (status === "pesawat") pasangKamera(rute.x, rute.y, rute.z, 24, 0);
+
+    if (status === "terjun") {
+      const g = bacaGerak();
+      const tanah = tinggiDi(p.x, p.z);
+      if (!terbuka && p.y - tanah < 45) bukaParasut();
+      p.vy += ((terbuka ? -9 : -38) - p.vy) * Math.min(1, dt * (terbuka ? 2.5 : 1.5));
+      const kec = terbuka ? 14 : 20;
+      p.vx += (g.mx * g.kuat * kec - p.vx) * Math.min(1, dt * 2);
+      p.vz += (g.mz * g.kuat * kec - p.vz) * Math.min(1, dt * 2);
+      p.x = klem(p.x + p.vx * dt, -BATAS, BATAS);
+      p.z = klem(p.z + p.vz * dt, -BATAS, BATAS);
+      p.y += p.vy * dt;
+      if (Math.hypot(p.vx, p.vz) > 1) p.hadap += selisihSudut(p.hadap, Math.atan2(p.vx, p.vz)) * Math.min(1, dt * 4);
+      pemain.g.position.set(p.x, p.y, p.z);
+      pemain.g.rotation.y = p.hadap;
+      pasangKamera(p.x, p.y + 1.5, p.z, terbuka ? 10 : 8, 0);
+      if (p.y <= tinggiDi(p.x, p.z) + 0.05) mendarat();
+    }
+
+    if (status === "tempur") updateFase(dt);
+
+    if (status === "tempur" && mobil) {
+      const t = mobil.tipe;
+      if (t === "heli") jalankanHeli(dt); else if (t === "jet") jalankanJet(dt); else jalankanDarat(dt);
+      cdKend -= dt;
+      if (KEND[t].senjata && (input.tembak || tombolKey["KeyF"]) && cdKend <= 0) tembakKend();
+    } else if (status === "tempur" || status === "selesai") {
+      let g = { mx: 0, mz: 0, kuat: 0 };
+      if (status === "tempur") g = bacaGerak();
+      // stamina: lari ada batasnya; kalau habis otomatis jalan biasa walau tombol lari masih ditahan
+      const bergerak = g.kuat > 0.1;
+      if (capek && stamina >= STAMINA_BISA_LARI_LAGI) capek = false;
+      const lari = (input.lari || tombolKey["ShiftLeft"]) && bergerak && !capek && stamina > 0;
+      if (lari) {
+        stamina = Math.max(0, stamina - STAMINA_BOROS * dt);
+        if (stamina <= 0) { capek = true; toast("Kecapekan! Jalan dulu sampai tenaga pulih 😮‍💨"); }
+      } else stamina = Math.min(STAMINA_MAKS, stamina + (bergerak ? STAMINA_PULIH_JALAN : STAMINA_PULIH_DIAM) * dt);
+      const tampilStam = status === "tempur" && (stamina < STAMINA_MAKS - 0.5 || capek);
+      $("stamWrap").style.display = tampilStam ? "block" : "none";
+      if (tampilStam) {
+        $("stamBar").style.width = stamina + "%";
+        $("stamBar").style.background = capek ? "#f97316" : stamina < 30 ? "#facc15" : "#38bdf8";
+      }
+      $("btnLari").style.opacity = capek ? "0.4" : "1";
+      const menembak = status === "tempur" && (input.tembak || tombolKey["KeyF"]);
+      const speedBoost = window.p ? (window.p._speedBoost || 1) : 1;
+const kec = (lari ? 9 : 5) * g.kuat * speedBoost;
+      p.x += g.mx * kec * dt; p.z += g.mz * kec * dt;
+      dorongKeluar(p, 0.5);
+      p.x = klem(p.x, -BATAS, BATAS); p.z = klem(p.z, -BATAS, BATAS);
+      const tanah = lantaiDi(p.x, p.z, p.y);          // tanah, atau lantai menara / tanjakan
+      if (input.lompat && status === "tempur") {
+  if(monsterActive){
+    if(p.diTanah){
+      p.vy = 15;
+      p.diTanah = false;
+    } else {
+      p.vy += 40 * dt;
+      p.vy = Math.min(p.vy, 25);
+    }
+  } else {
+    if(p.diTanah){
+      p.vy = 9;
+      p.diTanah = false;
+    }
+  }
+}
+input.lompat = false;
+      p.vy = Math.max(-45, p.vy - 25 * dt); p.y += p.vy * dt;
+      if (p.y <= tanah) {
+        if (!p.diTanah && p.vy < -22 && status === "tempur") lukaiPemain(Math.min(90, Math.round((-p.vy - 22) * 4)));   // damage jatuh
+        p.y = tanah; p.vy = 0; p.diTanah = true;
+      } else if (p.y > tanah + 0.15) p.diTanah = false;
+      if (menembak || scope) {
+        p.hadap += selisihSudut(p.hadap, Math.atan2(-Math.sin(kam.yaw), -Math.cos(kam.yaw))) * Math.min(1, dt * 15);
+      } else if (g.kuat > 0.1) {
+        p.hadap += selisihSudut(p.hadap, Math.atan2(g.mx, g.mz)) * Math.min(1, dt * 12);
+      }
+      pemain.g.position.set(p.x, p.y, p.z);
+      pemain.g.rotation.y = p.hadap;
+      const ayun = g.kuat > 0.1 && p.diTanah ? Math.sin(jam.elapsedTime * (lari ? 14 : 9)) * 0.7 * g.kuat : 0;
+      pemain.kakiKiri.rotation.x = ayun; pemain.kakiKanan.rotation.x = -ayun;
+      if (status === "tempur") {
+        pasangKameraKaki();
+        const dk = cariMobilDekat();
+        if (dk !== dekatMobil) { dekatMobil = dk; aturTombolMobil(); }
+      }
+      cdTembak -= dt;
+      if (menembak && cdTembak <= 0) cdTembak = aksiPegang();
+      if (flashT > 0) { flashT -= dt; if (flashT <= 0) { pemain.flash.visible = false; flashP.visible = false; } }
+    }
+
+    if (status !== "lobby") {
+      if (dt > 0) { pv.x = (p.x - pPrev.x) / dt * 0.5 + pv.x * 0.5; pv.z = (p.z - pPrev.z) / dt * 0.5 + pv.z * 0.5; }
+      pPrev.x = p.x; pPrev.z = p.z;
+      pisahkanZombie();
+      for (let i = zombies.length - 1; i >= 0; i--) {
+        updateZombie(zombies[i], dt);
+        if (zombies[i].hapus) zombies.splice(i, 1);
+      }
+      updatePeluru(dt);
+      updatePeluruMusuh(dt);
+      updateEfek(dt);
+      updateLain(dt);
+      updatePohon(dt);
+      updateAsap(dt);
+      if (frame % 4 === 0) gambarMinimap();
+      if (frame % 6 === 0) { aturInfo(); aturKoordinat(); }
+    }
+    senter.position.set(camera.position.x, camera.position.y + 1, camera.position.z);
+
+    const fovTarget = (status === "tempur" && scope) ? 28 : pengaturan.fov;
+    if (Math.abs(camera.fov - fovTarget) > 0.1) {
+      camera.fov += (fovTarget - camera.fov) * Math.min(1, dt * 10);
+      camera.updateProjectionMatrix();
+    }
+    renderer.render(scene, camera);
+  }
+
+  updateChunks(0, 0, Infinity);
+  resetGudang();
+  acakMedkit();
+  aturStat(); aturHp();
+  tampilSenjata(true);
+  aturUI();
+  loop();
+}
+  /* ═══════════════════════════════════════════
+   🐺 WOUUFYMONSTER Sss+ SYSTEM
+   ═══════════════════════════════════════════ */
+
+/* ⭐ TERIMA COMMAND DARI DEV PANEL */
+window.addEventListener('message', (event) => {
+  const data = event.data;
+  if(!data || data.type !== 'devCommand') return;
+  
+  console.log('📩 Command:', data.command);
+  
+  if(data.command === 'summonMonster') summonWouufyMonster();
+  else if(data.command === 'unsummonMonster') unsummonWouufyMonster();
+});
+
+/* ⭐ SUMMON MONSTER */
+function summonWouufyMonster(){
+  if(monsterActive){ console.log('Monster udah aktif'); return; }
+  if(typeof scene === 'undefined'){ console.log('Scene belum siap'); return; }
+  if(!window.p || !window.pemain){ console.log('Player belum siap'); return; }
+  
+  monsterActive = true;
+  console.log('🐺 SUMMON WOUUFYMONSTER Sss+!');
+  
+  bikinModelMonster();
+  
+  window.pemainInvincible = true;
+  window.oneHitKill = true;
+  
+  if(window.p) window.p._speedBoost = 3;
+  
+  if(window.toast) toast('🐺 WOUUFYMONSTER Sss+ ACTIVE!');
+}
+
+/* ⭐ UNS UMMON */
+function unsummonWouufyMonster(){
+  if(!monsterActive) return;
+  monsterActive = false;
+  console.log('🚶 Unsummon monster');
+  
+  if(monsterModel){
+    scene.remove(monsterModel);
+    monsterModel = null;
+  }
+  
+  if(window.pemain && window.pemain.g){
+    window.pemain.g.position.y = 0;
+    window.pemain.g.scale.setScalar(1);
+  }
+  
+  window.pemainInvincible = false;
+  window.oneHitKill = false;
+  
+  if(window.p) window.p._speedBoost = 1;
+  
+  if(window.toast) toast('🚶 Monster hilang');
+}
+
+/* ⭐ BIKIN MODEL MONSTER SERIGALA */
+function bikinModelMonster(){
+  const g = new THREE.Group();
+  
+  const matBulu = new THREE.MeshLambertMaterial({ color: 0x2a2a3a });
+  const matBuluTerang = new THREE.MeshLambertMaterial({ color: 0x4a4a5a });
+  const matMata = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+  const matGigi = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const matAura = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+  const matPunggung = new THREE.MeshLambertMaterial({ color: 0x1a1a2a });
+  
+  function kotak(w, h, d, mat, x, y, z){
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    return m;
+  }
+  
+  // Badan
+  g.add(kotak(3.0, 2.5, 6.0, matBulu, 0, 3.0, 0));
+  g.add(kotak(2.2, 2.2, 2.5, matBuluTerang, 0, 3.5, 3.0));
+  
+  // Kepala
+  g.add(kotak(2.5, 2.2, 2.8, matBulu, 0, 5.5, 3.5));
+  g.add(kotak(2.6, 0.6, 2.9, matBuluTerang, 0, 6.5, 3.5));
+  g.add(kotak(1.8, 1.5, 1.5, matBulu, 0, 4.5, 4.5));
+  
+  // Mata
+  g.add(kotak(0.4, 0.4, 0.4, matMata, -0.7, 6.0, 4.5));
+  g.add(kotak(0.4, 0.4, 0.4, matMata, 0.7, 6.0, 4.5));
+  
+  // Gigi
+  g.add(kotak(0.2, 0.5, 0.2, matGigi, -0.5, 3.8, 5.0));
+  g.add(kotak(0.2, 0.5, 0.2, matGigi, 0.0, 3.8, 5.0));
+  g.add(kotak(0.2, 0.5, 0.2, matGigi, 0.5, 3.8, 5.0));
+  
+  // Telinga
+  g.add(kotak(0.5, 1.0, 0.3, matBulu, -1.0, 7.0, 3.5));
+  g.add(kotak(0.5, 1.0, 0.3, matBulu, 1.0, 7.0, 3.5));
+  
+  // Kaki
+  const posisiKaki = [[-1.2, 0.5, 2.2], [1.2, 0.5, 2.2], [-1.2, 0.5, -2.2], [1.2, 0.5, -2.2]];
+  posisiKaki.forEach(([x, y, z]) => {
+    g.add(kotak(0.9, 2.5, 0.9, matBulu, x, y + 1.25, z));
+    g.add(kotak(1.0, 0.4, 1.3, matBuluTerang, x, y, z));
+  });
+  
+  // Ekor
+  const ekor = new THREE.Group();
+  ekor.add(kotak(0.8, 0.8, 2.5, matBulu, 0, 0, -1.5));
+  ekor.add(kotak(0.7, 0.7, 2.0, matBuluTerang, 0, 0.3, -3.5));
+  ekor.position.set(0, 4.5, -3.0);
+  g.add(ekor);
+  
+  // Punggung
+  g.add(kotak(2.2, 0.6, 3.0, matPunggung, 0, 4.5, -0.5));
+  
+  // Aura
+  const auraGeo = new THREE.SphereGeometry(4.5, 20, 20);
+  const aura = new THREE.Mesh(auraGeo, matAura);
+  aura.position.y = 3.5;
+  g.add(aura);
+  
+  g.userData = { ekor: ekor, aura: aura, fase: 0 };
+  g.scale.setScalar(1.2);
+  
+  scene.add(g);
+  monsterModel = g;
+  
+  console.log('✅ Model monster dibuat!');
+}
+
+/* ⭐ UPDATE POSISI MONSTER */
+function updateMonsterPosition(dt){
+  if(!monsterModel || !window.p) return;
+  
+  monsterModel.position.set(p.x, p.y, p.z);
+  monsterModel.rotation.y = p.hadap;
+  
+  monsterModel.userData.fase += dt * 3;
+  if(monsterModel.userData.ekor){
+    monsterModel.userData.ekor.rotation.y = Math.sin(monsterModel.userData.fase) * 0.3;
+  }
+  
+  const pulse = Math.sin(performance.now() / 200) * 0.5 + 0.5;
+  if(monsterModel.userData.aura){
+    monsterModel.userData.aura.material.opacity = 0.15 + pulse * 0.2;
+    monsterModel.userData.aura.scale.setScalar(1 + pulse * 0.1);
+  }
+  
+  if(window.pemain && window.pemain.g){
+    window.pemain.g.position.y = 2.5;
+  }
+}
+</script>
+</body>
+</html>
